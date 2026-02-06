@@ -8,16 +8,19 @@
 class ForgeBuilding : public PopulationBuilding {
 public:
     ForgeBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {}
+    void RecalculateSize(int newSize) override;
 };
 
 class MillBuilding : public PopulationBuilding {
 public:
     MillBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {}
+    void RecalculateSize(int newSize) override;
 };
 
 class LumberHatBuilding : public PopulationBuilding {
 public:
     LumberHatBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {}
+    void RecalculateSize(int newSize) override;
 };
 
 class TempleBuilding : public PopulationBuilding {
@@ -41,5 +44,11 @@ public:
 class ForestTempleBuilding : public PopulationBuilding {
 public:
     ForestTempleBuilding() : PopulationBuilding(20, TerrainTypes::Forest, false, 1) {}
+    void RecalculateSize() = delete;
+};
+
+class Port : public PopulationBuilding {
+public:
+    Port() : PopulationBuilding(7, TerrainTypes::Water, false, 1) {}
     void RecalculateSize() = delete;
 };

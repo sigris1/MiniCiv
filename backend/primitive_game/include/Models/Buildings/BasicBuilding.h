@@ -29,7 +29,7 @@ public:
             BasicBuilding(Cost, NecessaryTerrain, IsUnique),
             population(Population)
     {}
-    void RecalculateSize(int newSize);
+    virtual void RecalculateSize(int newSize) = 0;
 };
 
 class EconomicalBuilding : public BasicBuilding {
