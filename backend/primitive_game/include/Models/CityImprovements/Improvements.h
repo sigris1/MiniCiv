@@ -1,0 +1,40 @@
+//
+// Created by sigris on 07.02.2026.
+//
+
+#pragma once
+
+#include "BasicImprovement.h"
+#include "memory"
+
+class EconomicalImprovement : BasicImprovement {
+public:
+    int bonus;
+    EconomicalImprovement(int count) :
+        bonus(count)
+    {}
+    int apply(std::weak_ptr<City> improving) override;
+};
+
+class DefenceImprovement : BasicImprovement {
+public:
+    int bonus;
+    DefenceImprovement(int count) :
+            bonus(count)
+    {}
+    int apply(std::weak_ptr<City> improving) override;
+};
+
+class GiantImprovement : BasicImprovement {
+public:
+    int apply(std::weak_ptr<City> improving) override;
+};
+
+class CoinsImprovement : BasicImprovement {
+public:
+    int bonus;
+    CoinsImprovement(int count):
+        bonus(count)
+    {}
+    int apply(std::weak_ptr<City> improving) override;
+};

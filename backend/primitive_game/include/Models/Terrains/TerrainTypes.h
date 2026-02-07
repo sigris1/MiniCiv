@@ -10,3 +10,12 @@ enum class TerrainTypes{
     Water,
     DeepWater
 };
+
+double getDefenceModifier(TerrainTypes type){
+    switch (type) {
+        case(TerrainTypes::Field) :
+            return 1;
+        default:
+            return 1.5;
+    }
+}
