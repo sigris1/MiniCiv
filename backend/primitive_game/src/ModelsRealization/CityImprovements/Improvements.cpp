@@ -31,3 +31,9 @@ int GiantImprovement::apply(std::weak_ptr<City> improving) {
 int CoinsImprovement::apply(std::weak_ptr<City> improving) {
     return bonus;
 }
+
+int BorderImprovement::apply(std::weak_ptr<City> improving) {
+    auto city = improving.lock();
+    city->advancedTerritory = true;
+    return 0;
+}

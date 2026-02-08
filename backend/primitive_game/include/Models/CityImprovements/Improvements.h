@@ -10,7 +10,7 @@
 class EconomicalImprovement : BasicImprovement {
 public:
     int bonus;
-    EconomicalImprovement(int count) :
+    explicit EconomicalImprovement(int count) :
         bonus(count)
     {}
     int apply(std::weak_ptr<City> improving) override;
@@ -19,7 +19,7 @@ public:
 class DefenceImprovement : BasicImprovement {
 public:
     int bonus;
-    DefenceImprovement(int count) :
+    explicit DefenceImprovement(int count) :
             bonus(count)
     {}
     int apply(std::weak_ptr<City> improving) override;
@@ -33,8 +33,13 @@ public:
 class CoinsImprovement : BasicImprovement {
 public:
     int bonus;
-    CoinsImprovement(int count):
+    explicit CoinsImprovement(int count):
         bonus(count)
     {}
+    int apply(std::weak_ptr<City> improving) override;
+};
+
+class BorderImprovement : BasicImprovement {
+public:
     int apply(std::weak_ptr<City> improving) override;
 };

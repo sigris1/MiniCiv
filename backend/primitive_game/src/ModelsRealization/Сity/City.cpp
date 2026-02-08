@@ -6,6 +6,7 @@
 #include "Models/Tile/Tile.h"
 #include "thread"
 #include "future"
+#include "memory"
 
 int City::produceCoins(){
     getIncome();
@@ -17,18 +18,15 @@ void City::recruitUnit(std::unique_ptr<BasicUnit> unit) {
     tilePtr->emplaceUnit(std::move(unit));
 }
 
-void City::improveCity(){
+void City::improveCity(std::unique_ptr<BasicImprovement> inv){
     basicEconomic++;
-
-    switch (size) {
-        case(2) ->
-    }
+    inv->apply(shared_from_this());
 };
 
 void City::addPopulation(int amount){
     if (currentPopulation + amount >= size){
         currentPopulation = (currentPopulation + amount) % (size + 1);
-        improveCity();
+//TODO   дофиксить вот тут, с ожидаением улучшения с фронта, чтобы аплайнуть корректное улучшение     improveCity();
     } else {
         currentPopulation += amount;
     }

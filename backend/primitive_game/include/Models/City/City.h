@@ -7,8 +7,9 @@
 #include "memory"
 #include "../Map/Map.h"
 #include "../Units/BasicUnits.h"
+#include "../CityImprovements/BasicImprovement.h"
 
-class City {
+class City : std::enable_shared_from_this<City> {
 public:
     int size = 1;
     int basicEconomic = 0;
@@ -26,7 +27,7 @@ public:
 
     int produceCoins();
     void recruitUnit(std::unique_ptr<BasicUnit> unit);
-    void improveCity();
+    void improveCity(std::unique_ptr<BasicImprovement> inv);
     void addPopulation(int amount);
     [[nodiscard]] bool canRecruitUnit() const;
     void getIncome();
