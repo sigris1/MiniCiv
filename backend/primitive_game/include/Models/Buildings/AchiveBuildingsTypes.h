@@ -9,5 +9,6 @@ enum class AchiveBuildingsTypes {
     ImperialTomb,
     EyeOfGod,
     FortunePark,
-    KillerGates
+    KillerGates,
+    GreatBazaar
 };

@@ -1,6 +1,7 @@
 //
 // Created by sigris on 05.02.2026.
 //
+
 #pragma once
 
 enum class TerrainTypes{
@@ -19,3 +20,9 @@ double getDefenceModifier(TerrainTypes type){
             return 1.5;
     }
 }
+
+enum class DefenceType {
+    Forest,
+    Mountain,
+    Water
+};
