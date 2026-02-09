@@ -5,6 +5,7 @@
 #pragma once
 
 enum class AchiveType {
+    None,
     Killer,
     Trader,
     Explorer,

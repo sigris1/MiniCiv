@@ -10,23 +10,28 @@
 #include "../Achivemets/AchiveType.h"
 #include "../Resource/ResourceType.h"
 #include "../Terrains/TerrainTypes.h"
+#include "memory"
+#include "vector"
+#include "../Tribe/TribeAbilitiesTypes.h"
 
 class BasicTech {
 public:
     int basicCost;
     int rangedLevel;
-    std::weak_ptr<BuildingType> newBuild;
-    std::weak_ptr<UnitType> newUnit;
-    std::weak_ptr<AchiveType> newAchive;
-    std::weak_ptr<ResourceType> newResource;
-    std::weak_ptr<DefenceType> newDefence;
-    BasicTech(int cost, int range, std::weak_ptr<BuildingType> buildingType, std::weak_ptr<UnitType> unitType, std::weak_ptr<AchiveType> achiveType, std::weak_ptr<ResourceType> resourceType, std::weak_ptr<DefenceType> defenceType) :
+    std::vector<BuildingType> newBuild;
+    UnitType newUnit;
+    AchiveType newAchive;
+    ResourceType newResource;
+    DefenceType newDefence;
+    AbilitiesType newAbility;
+    BasicTech(int cost, int range, std::vector<BuildingType> buildingType, UnitType unitType, AchiveType achiveType, ResourceType resourceType, DefenceType defenceType, AbilitiesType abilityType) :
             basicCost(cost),
             rangedLevel(range),
             newBuild(std::move(buildingType)),
-            newUnit(std::move(unitType)),
-            newResource(std::move(resourceType)),
-            newAchive(std::move(achiveType)),
-            newDefence(std::move(defenceType))
+            newUnit(unitType),
+            newResource(resourceType),
+            newAchive(achiveType),
+            newDefence(defenceType),
+            newAbility(abilityType)
     {}
 };

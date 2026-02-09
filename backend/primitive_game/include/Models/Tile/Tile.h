@@ -8,6 +8,7 @@
 #include "vector"
 #include "../Units/BasicUnits.h"
 #include "../Resource/BasicResource.h"
+#include "../Resource/ResourceType.h"
 #include "../Terrains/TerrainTypes.h"
 #include "../Buildings/BasicBuilding.h"
 #include "../City/City.h"
@@ -29,6 +30,6 @@ public:
     void build(std::unique_ptr<BasicBuilding> newBuilding);
     void emplaceUnit(std::unique_ptr<BasicUnit> unit);
     void specialEmplaceUnit(std::unique_ptr<BasicUnit> unit);
-    void collectResource();
+    void collectResource(ResourceType type);
     int collectIncome();
 };

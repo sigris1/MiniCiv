@@ -17,6 +17,7 @@
 #include "../Terrains/TerrainTypes.h"
 #include "NationType.h"
 #include "../Tile/Tile.h"
+#include "TribeAbilitiesTypes.h"
 
 class BasicTech;
 
@@ -30,6 +31,7 @@ public:
     std::vector<UnitType> availableUnits;
     std::vector<ResourceType> availableResorces;
     std::vector<AchiveType> availableAchivs;
+    std::vector<AbilitiesType> tribeAbilities;
     std::map<BasicAchive, int> progress;
     std::atomic<int> balance = 0;
     int tribeId;
@@ -38,8 +40,10 @@ public:
     void loseCity(const std::weak_ptr<City>& city);
     void learnTech(const std::weak_ptr<BasicTech>& tech);
     void produceIncome();
-    void build(std::weak_ptr<Tile> tile, BuildingType buildingType);
-    void moveUnit(std::weak_ptr<Tile> from, std::weak_ptr<Tile> to);
-    void recruitUnit(std::weak_ptr<City>, UnitType unitType);
-    void collectResource(std::weak_ptr<Tile> tile, ResourceType resourceType);
+    void build(const std::weak_ptr<Tile>& tile, BuildingType buildingType);
+    void moveUnit(const std::weak_ptr<Tile>& from, const std::weak_ptr<Tile>& to);
+    void recruitUnit(const std::weak_ptr<City>&, UnitType unitType);
+    void collectResource(const std::weak_ptr<Tile>& tile, ResourceType resourceType);
+private:
+    void applyTech(const std::shared_ptr<BasicTech>& tech);
 };

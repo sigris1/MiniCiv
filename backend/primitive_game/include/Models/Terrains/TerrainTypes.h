@@ -22,6 +22,7 @@ double getDefenceModifier(TerrainTypes type){
 }
 
 enum class DefenceType {
+    None,
     Forest,
     Mountain,
     Water

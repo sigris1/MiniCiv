@@ -4,6 +4,7 @@
 #pragma once
 
 enum class ResourceType {
+    None,
     Forest,
     Fish,
     Mining,

@@ -5,6 +5,7 @@
 #pragma once
 
 enum class UnitType {
+    None,
     Warrior,
     Rider,
     Archer,

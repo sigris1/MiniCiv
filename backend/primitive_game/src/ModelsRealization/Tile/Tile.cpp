@@ -6,15 +6,23 @@
 #include "stdexcept"
 
 void Tile::build(std::unique_ptr<BasicBuilding> newBuilding) {
-
+    //TODO добавить метчер ресурстайп -> ресур с, а потом если всё ок, то удалить ресурс с клетки, так же обработат постройку справйтБилдинг, если оно нужно
+    //TODO докинуть население городу, к которому относиться тайл, считая, что возможность сбор ресурсов мы провалидировали ранее
+    //TODO но только аналогичная шутка со зданиями, а не ресурсами
 }
 
 int Tile::collectIncome() {
-
+    int income = 0;
+    for (auto& b : buildings){
+        if (auto eco = dynamic_cast<EconomicalBuilding*>(b.get())) {
+            income += eco->economic;
+        }
+    }
 }
 
-void Tile::collectResource() {
-
+void Tile::collectResource(ResourceType type) {
+    //TODO добавить метчер ресурстайп -> ресур с, а потом если всё ок, то удалить ресурс с клетки, так же обработат постройку справйтБилдинг, если оно нужно
+    //TODO докинуть население городу, к которому относиться тайл, считая, что возможность сбор ресурсов мы провалидировали ранее
 }
 
 void Tile::emplaceUnit(std::unique_ptr<BasicUnit> newUnit) {

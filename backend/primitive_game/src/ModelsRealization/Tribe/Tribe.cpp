@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include "thread"
 #include "future"
-#include "numeric"
 
 void Tribe::addCity(const std::weak_ptr<City>& city) {
     auto c = city.lock();
@@ -43,12 +42,24 @@ void Tribe::learnTech(const std::weak_ptr<BasicTech>& tech) {
     if (alreadyKnown) {
         throw std::logic_error("Technology already learned");
     }
+    auto isWisdomTribe = std::any_of(
+            tribeAbilities.begin(),
+            tribeAbilities.end(),
+            [](auto i) {
+                return i == AbilitiesType::Literacy;
+            }
+    );
 
-    if (balance < t->basicCost + t->rangedLevel * cities.size()){
+    int cost = t->basicCost + t->rangedLevel * cities.size();
+    if (isWisdomTribe) {
+        cost = cost * 2 / 3;
+    }
+    if (balance < cost ){
         throw std::logic_error("Balance is so low for learning this tech");
     }
     balance -= t->basicCost + t->rangedLevel * cities.size();
     knownTechs.push_back(t);
+    applyTech(t);
 }
 
 void Tribe::produceIncome() {
@@ -83,18 +94,61 @@ void Tribe::produceIncome() {
 
 }
 
-void Tribe::build(std::weak_ptr<Tile> tile, BuildingType buildingType) {
+void Tribe::build(const std::weak_ptr<Tile>& tile, BuildingType buildingType) {
 
 }
 
-void Tribe::moveUnit(std::weak_ptr<Tile> from, std::weak_ptr<Tile> to) {
+void Tribe::moveUnit(const std::weak_ptr<Tile>& from, const std::weak_ptr<Tile>& to) {
 
 }
 
-void Tribe::recruitUnit(std::weak_ptr<City>, UnitType unitType) {
+void Tribe::recruitUnit(const std::weak_ptr<City>& place, UnitType unitType) {
 
 }
 
-void Tribe::collectResource(std::weak_ptr<Tile> tile, ResourceType resourceType){
+void Tribe::collectResource(const std::weak_ptr<Tile>& tile, ResourceType resourceType){
+    auto t = tile.lock();
+    if (t->ownerTribeId != tribeId){
+        throw std::logic_error("You cannot collect non-owned resources");
+    }
+    if (t->resources.empty()){
+        throw std::logic_error("There are no resources in that tile");
+    }
 
+    auto availableRes = std::any_of(
+            availableResorces.begin(),
+            availableResorces.end(),
+            [&resourceType](auto r) {
+                return r == resourceType;
+            }
+    );
+
+    if (!availableRes) {
+        throw std::logic_error("Tribe cannot collect this resource");
+    }
+
+    //TODO с метчером ресурстайп - ресурс проверить, что хватает денег на коллекшин ресурса
+    t->collectResource(resourceType);
 }
+
+void Tribe::applyTech(const std::shared_ptr<BasicTech> &tech) {
+    if (tech->newAbility != AbilitiesType::None){
+        tribeAbilities.push_back(tech->newAbility);
+    }
+    if (tech->newResource != ResourceType::None) {
+        availableResorces.push_back(tech->newResource);
+    }
+    if (tech->newAchive != AchiveType::None) {
+        availableAchivs.push_back(tech->newAchive);
+    }
+    if (tech->newUnit != UnitType::None) {
+        availableUnits.push_back(tech->newUnit);
+    }
+    if (tech->newDefence != DefenceType::None) {
+        availableDefences.push_back(tech->newDefence);
+    }
+    for (auto i : tech->newBuild){
+        availableBuildings.push_back(i);
+    }
+}
+
