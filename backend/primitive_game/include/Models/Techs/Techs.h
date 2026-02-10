@@ -4,6 +4,7 @@
 #pragma once
 
 #include "BasicTech.h"
+#include "../Tribe/NationType.h"
 
 class OrganizationTech : public BasicTech {
 public:
@@ -404,3 +405,46 @@ public:
     )
     {}
 };
+
+BasicTech* startTechMatcher(NationType type){
+    BasicTech* tech = nullptr;
+    switch (type) {
+        case NationType::Climbers:
+            tech = new ClimbingTech();
+            break;
+        case NationType::FruitCollectors:
+            tech =  new OrganizationTech();
+            break;
+        case NationType::Hunters:
+            tech = new HuntingTech();
+            break;
+        case NationType::Riders:
+            tech = new RidingTech();
+            break;
+        case NationType::Fishermen:
+            tech = new FishingTech();
+            break;
+        case NationType::Archers:
+            tech =  new ArcheryTech();
+            break;
+        case NationType::Rich:
+            return nullptr;
+        case NationType::Swordsmen:
+            tech = new SmitheryTech();
+            break;
+        case NationType::Farmers:
+            tech = new FarmingTech();
+            break;
+        case NationType::Peacemakers:
+            tech = new PhilosophyTech();
+            break;
+        case NationType::ShieldBearers:
+            tech = new DiplomacyTech();
+            break;
+        case NationType::RoadCreators:
+            tech = new RoadsTech();
+            break;
+    }
+    tech->basicCost = 0;
+    return tech;
+}

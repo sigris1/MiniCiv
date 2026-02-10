@@ -24,6 +24,7 @@ public:
     ResourceType newResource;
     DefenceType newDefence;
     AbilitiesType newAbility;
+    BasicTech(const BasicTech& tech) = default;
     BasicTech(int cost, int range, std::vector<BuildingType> buildingType, UnitType unitType, AchiveType achiveType, ResourceType resourceType, DefenceType defenceType, AbilitiesType abilityType) :
             basicCost(cost),
             rangedLevel(range),

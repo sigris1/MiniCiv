@@ -3,7 +3,7 @@
 //
 
 #include "Models/Tribe/Tribe.h"
-#include "Models/Techs/BasicTech.h"
+#include "Models/Techs/Techs.h"
 #include <stdexcept>
 #include "thread"
 #include "future"
@@ -132,6 +132,10 @@ void Tribe::collectResource(const std::weak_ptr<Tile>& tile, ResourceType resour
 }
 
 void Tribe::applyTech(const std::shared_ptr<BasicTech> &tech) {
+    if (tech.get() == nullptr){
+        return;
+    }
+
     if (tech->newAbility != AbilitiesType::None){
         tribeAbilities.push_back(tech->newAbility);
     }
@@ -150,5 +154,12 @@ void Tribe::applyTech(const std::shared_ptr<BasicTech> &tech) {
     for (auto i : tech->newBuild){
         availableBuildings.push_back(i);
     }
+}
+
+Tribe::Tribe(int id, NationType tribeType) :
+    tribeId(id),
+    type(tribeType)
+{
+    learnTech(std::make_shared<BasicTech>(*startTechMatcher(tribeType)));
 }
 

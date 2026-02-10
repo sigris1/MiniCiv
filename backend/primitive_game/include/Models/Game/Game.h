@@ -15,5 +15,5 @@ public:
     std::vector<std::unique_ptr<Tribe>> tribes;
     Game();
     bool isFinished();
-    std::weak_ptr<Tribe> getWinner();
+    Tribe* getWinner();
 };

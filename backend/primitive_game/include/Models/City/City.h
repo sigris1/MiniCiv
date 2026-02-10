@@ -24,7 +24,7 @@ public:
             mainTile(std::move(tile)),
             gameMap(std::move(map))
     {}
-
+    City(const City& city) = default;
     int produceCoins();
     void recruitUnit(std::unique_ptr<BasicUnit> unit);
     void improveCity(std::unique_ptr<BasicImprovement> inv);

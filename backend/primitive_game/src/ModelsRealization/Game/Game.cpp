@@ -19,10 +19,10 @@ bool Game::isFinished() {
     return countAliveTribes == 1;
 }
 
-std::weak_ptr<Tribe> Game::getWinner() {
-    for (auto& t : tribes){
+Tribe* Game::getWinner() {
+    for (const auto& t : tribes){
         if (!t->cities.empty()){
-            return std::make_shared<Tribe>(*t);
+            return t.get();
         }
     }
 }

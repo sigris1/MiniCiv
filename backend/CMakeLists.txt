@@ -1,12 +1,16 @@
+add_library(game_lib STATIC)
+
 file(GLOB_RECURSE GAME_SOURCES
         CONFIGURE_DEPENDS
         primitive_game/src/*.cpp
 )
 
-add_library(game_lib STATIC ${GAME_SOURCES})
+target_sources(game_lib PRIVATE
+        ${GAME_SOURCES}
+)
 
-target_include_directories(game_lib
-        PUBLIC primitive_game/include
+target_include_directories(game_lib PUBLIC
+        primitive_game/include
 )
 
 add_executable(game_app
@@ -17,6 +21,4 @@ target_link_libraries(game_app
         PRIVATE game_lib
 )
 
-if(BUILD_TESTING)
-    add_subdirectory(tests)
-endif()
+add_subdirectory(primitive_game/tests)

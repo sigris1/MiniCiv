@@ -36,6 +36,7 @@ public:
     std::atomic<int> balance = 0;
     int tribeId;
     NationType type;
+    Tribe(int id, NationType tribeType);
     void addCity(const std::weak_ptr<City>& city);
     void loseCity(const std::weak_ptr<City>& city);
     void learnTech(const std::weak_ptr<BasicTech>& tech);

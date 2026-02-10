@@ -48,3 +48,26 @@ void Tile::specialEmplaceUnit(std::unique_ptr<BasicUnit> newUnit) {
       //TODO Добавить вынужденное перемещение юнита, который сейчас в городе в одну из соседних клеток, когда сделаю movementManager
     }
 }
+
+Tile::Tile(const Tile& other)
+        : x(other.x),
+          y(other.y),
+          type(other.type),
+          hasRoad(other.hasRoad),
+          hasBridge(other.hasBridge),
+          ownerTribeId(other.ownerTribeId),
+          defenceModifier(other.defenceModifier),
+          city(other.city)
+{
+    if (other.unit) {
+        unit = std::make_unique<BasicUnit>(*other.unit);
+    }
+
+    for (const auto& r : other.resources) {
+        resources.push_back(std::make_unique<BasicResource>(*r));
+    }
+
+    for (const auto& b : other.buildings) {
+        buildings.push_back(std::make_unique<BasicBuilding>(*b));
+    }
+}
