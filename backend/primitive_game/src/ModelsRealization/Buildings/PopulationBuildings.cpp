@@ -18,3 +18,23 @@ void LumberHatBuilding::RecalculateSize(int newSize) {
     this->size = newSize;
     this->population = newSize;
 }
+
+void TempleBuilding::RecalculateSize(int newSize) {
+    newSize = 1;
+}
+
+void WaterTempleBuilding::RecalculateSize(int newSize) {
+    newSize = 1;
+}
+
+void MountainTempleBuilding::RecalculateSize(int newSize) {
+    newSize = 1;
+}
+
+void ForestTempleBuilding::RecalculateSize(int newSize) {
+    newSize = 1;
+}
+
+void Port::RecalculateSize(int newSize) {
+    newSize = 1;
+}

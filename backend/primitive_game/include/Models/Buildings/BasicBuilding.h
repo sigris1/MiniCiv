@@ -34,7 +34,7 @@ public:
 
 class EconomicalBuilding : public BasicBuilding {
 public:
-    int economic;
+    int economic = 0;
     EconomicalBuilding(int Cost, TerrainTypes NecessaryTerrain, bool IsUnique, int Economic) :
             BasicBuilding(Cost, NecessaryTerrain, IsUnique),
             economic(Economic)

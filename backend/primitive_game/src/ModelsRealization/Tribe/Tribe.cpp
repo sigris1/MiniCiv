@@ -94,6 +94,7 @@ void Tribe::produceIncome() {
 
 }
 
+//TODO доделать блять
 void Tribe::build(const std::weak_ptr<Tile>& tile, BuildingType buildingType) {
 
 }

@@ -17,7 +17,7 @@ class Tile {
 public:
     int x;
     int y;
-    std::unique_ptr<BasicUnit> unit;
+    std::weak_ptr<BasicUnit> unit;
     std::vector<std::unique_ptr<BasicResource>> resources;
     std::vector<std::unique_ptr<BasicBuilding>> buildings;
     TerrainTypes type;

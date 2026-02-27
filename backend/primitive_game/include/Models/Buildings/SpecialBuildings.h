@@ -7,7 +7,7 @@
 
 class Road : public BasicBuilding {
 public:
-    Road(TerrainTypes terrain)
+    explicit Road(TerrainTypes terrain)
             : BasicBuilding(0, terrain, false)
             {
                     if (!isCorrectTerrain(terrain)) {
@@ -24,7 +24,7 @@ private:
 
 class Bridge : public BasicBuilding {
 public:
-    Bridge(TerrainTypes terrain)
+    explicit Bridge(TerrainTypes terrain)
             : BasicBuilding(0, terrain, false)
         {
             if (!isCorrectTerrain(terrain)) {

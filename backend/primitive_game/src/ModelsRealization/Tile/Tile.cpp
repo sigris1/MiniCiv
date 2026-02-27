@@ -18,6 +18,7 @@ int Tile::collectIncome() {
             income += eco->economic;
         }
     }
+    return income;
 }
 
 void Tile::collectResource(ResourceType type) {

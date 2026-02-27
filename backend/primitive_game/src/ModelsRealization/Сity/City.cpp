@@ -7,6 +7,7 @@
 #include "thread"
 #include "future"
 #include "memory"
+#include "iostream"
 
 int City::produceCoins(){
     getIncome();
@@ -74,9 +75,7 @@ void City::getIncome() {
 
                                                  auto t = weakTile.lock();
                                                  if (!t) continue;
-
                                                  if (t->ownerTribeId != tribeId) continue;
-
                                                  localEco += t->collectIncome();
 
                                              }

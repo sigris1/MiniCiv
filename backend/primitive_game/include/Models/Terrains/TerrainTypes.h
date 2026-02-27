@@ -5,6 +5,7 @@
 #pragma once
 
 enum class TerrainTypes{
+    None,
     Field,
     Forest,
     Mountain,

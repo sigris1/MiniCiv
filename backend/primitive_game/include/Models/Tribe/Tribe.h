@@ -24,6 +24,7 @@ class BasicTech;
 class Tribe{
 public:
     std::vector<std::weak_ptr<City>> cities;
+    std::vector<std::shared_ptr<BasicUnit>> units;
     std::weak_ptr<City> capital;
     std::vector<std::weak_ptr<BasicTech>> knownTechs;
     std::vector<BuildingType> availableBuildings;

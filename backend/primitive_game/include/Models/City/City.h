@@ -20,9 +20,9 @@ public:
     bool advancedTerritory = false;
     std::weak_ptr<Tile> mainTile;
     std::weak_ptr<Map> gameMap;
-    City(std::weak_ptr<Tile> tile, std::weak_ptr<Map> map) :
-            mainTile(std::move(tile)),
-            gameMap(std::move(map))
+    City(std::shared_ptr<Tile> tile, std::shared_ptr<Map> map) :
+            mainTile(tile),
+            gameMap(map)
     {}
     City(const City& city) = default;
     int produceCoins();

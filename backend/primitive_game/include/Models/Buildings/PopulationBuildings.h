@@ -26,29 +26,29 @@ public:
 class TempleBuilding : public PopulationBuilding {
 public:
     TempleBuilding() : PopulationBuilding(20, TerrainTypes::Field, false, 1) {}
-    void RecalculateSize() = delete;
+    void RecalculateSize(int newSize) override;
 };
 
 class WaterTempleBuilding : public PopulationBuilding {
 public:
     WaterTempleBuilding() : PopulationBuilding(20, TerrainTypes::Water, false, 1) {}
-    void RecalculateSize() = delete;
+    void RecalculateSize(int newSize) override;
 };
 
 class MountainTempleBuilding : public PopulationBuilding {
 public:
     MountainTempleBuilding() : PopulationBuilding(20, TerrainTypes::Mountain, false, 1) {}
-    void RecalculateSize() = delete;
+    void RecalculateSize(int newSize) override;
 };
 
 class ForestTempleBuilding : public PopulationBuilding {
 public:
     ForestTempleBuilding() : PopulationBuilding(20, TerrainTypes::Forest, false, 1) {}
-    void RecalculateSize() = delete;
+    void RecalculateSize(int newSize) override;
 };
 
 class Port : public PopulationBuilding {
 public:
     Port() : PopulationBuilding(7, TerrainTypes::Water, false, 1) {}
-    void RecalculateSize() = delete;
+    void RecalculateSize(int newSize) override;
 };
