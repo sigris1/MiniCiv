@@ -7,6 +7,8 @@
 #include "../include/Models/Buildings/EconomicBuildings.h"
 #include "../include/Models/Game/Game.h"
 #include "../include/EngineElements/DamageCalculator.h"
+#include "../include/EngineElements/UnitsMover.h"
+#include "Models/Units/AquaticUnits.h"
 
 std::vector<std::vector<std::shared_ptr<Tile>>> testMapCreation(int size) {
 
@@ -632,4 +634,781 @@ TEST(Battle, GameReset_ClearsState) {
 
     EXPECT_EQ(game->tribes.size(), 0);
     EXPECT_NE(game->tileMap, nullptr);
+}
+
+TEST(UnitMover, BasicMovement_OneRange_Field) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    game->tribes[0]->units.push_back(unit);
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    EXPECT_EQ(available.size(), 8);
+    EXPECT_TRUE(fight.empty());
+
+    for (const auto& tile : available) {
+        int dx = std::abs(tile->x - 5);
+        int dy = std::abs(tile->y - 5);
+        EXPECT_LE(dx, 1);
+        EXPECT_LE(dy, 1);
+        EXPECT_TRUE(dx + dy > 0);
+    }
+}
+
+TEST(UnitMover, Movement_TwoRange_Field) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(15);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 7, 7);
+    unit->movement = 2;
+    game->tribes[0]->units.push_back(unit);
+    if (auto tile = game->getTile(7, 7).lock()) tile->unit = unit;
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    EXPECT_GE(available.size(), 16);
+    EXPECT_TRUE(fight.empty());
+
+    for (const auto& tile : available) {
+        int dx = std::abs(tile->x - 7);
+        int dy = std::abs(tile->y - 7);
+        EXPECT_LE(dx, 2);
+        EXPECT_LE(dy, 2);
+        EXPECT_TRUE(dx + dy > 0);
+    }
+}
+
+TEST(UnitMover, RoadBonus_MovementOne_Doubled) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    unit->movement = 1;
+    if (auto tile = game->getTile(5, 5).lock()) {
+        tile->unit = unit;
+        tile->hasRoad = true;
+    }
+    game->tribes[0]->units.push_back(unit);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    EXPECT_GE(available.size(), 16);
+}
+
+TEST(UnitMover, RoadBonus_MovementTwo_PlusOne) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    unit->movement = 2;
+    if (auto tile = game->getTile(5, 5).lock()) {
+        tile->unit = unit;
+        tile->hasRoad = true;
+    }
+    game->tribes[0]->units.push_back(unit);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    EXPECT_GE(available.size(), 24);
+}
+
+TEST(UnitMover, Mountain_WithoutClimbing_Blocked) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Peacemakers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    if (auto tile = game->getTile(6, 5).lock()) tile->type = TerrainTypes::Mountain;
+    game->tribes[0]->units.push_back(unit);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    for (const auto& tile : available) {
+        EXPECT_NE(tile->type, TerrainTypes::Mountain);
+    }
+}
+
+TEST(UnitMover, Mountain_WithClimbing_Accessible) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    auto tribe = std::make_shared<Tribe>(0, NationType::Climbers);
+    tribe->tribeAbilities.push_back(AbilitiesType::Climbing);
+    game->tribes.push_back(tribe);
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    if (auto tile = game->getTile(6, 5).lock()) tile->type = TerrainTypes::Mountain;
+    game->tribes[0]->units.push_back(unit);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    bool foundMountain = false;
+    for (const auto& tile : available) {
+        if (tile->type == TerrainTypes::Mountain) {
+            foundMountain = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundMountain);
+}
+
+TEST(UnitMover, Water_Ship_CanMove) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Fishermen));
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto boat = std::make_shared<Boat>(unit, 5, 5);
+    if (auto tile = game->getTile(5, 5).lock()) {
+        tile->unit = unit;
+        tile->type = TerrainTypes::Water;
+    }
+    if (auto tile = game->getTile(6, 5).lock()) tile->type = TerrainTypes::Water;
+    game->tribes[0]->units.push_back(boat);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, boat);
+
+    bool foundWater = false;
+    for (const auto& tile : available) {
+        if (tile->type == TerrainTypes::Water) {
+            foundWater = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundWater);
+}
+
+TEST(UnitMover, Water_NonShip_CannotMove) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    if (auto tile = game->getTile(5, 5).lock()) {
+        tile->unit = unit;
+        tile->type = TerrainTypes::Field;
+    }
+    if (auto tile = game->getTile(6, 5).lock()) tile->type = TerrainTypes::Water;
+    game->tribes[0]->units.push_back(unit);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    for (const auto& tile : available) {
+        EXPECT_NE(tile->type, TerrainTypes::Water);
+    }
+}
+
+TEST(UnitMover, DeepWater_WithDeepFloating_Accessible) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    auto tribe = std::make_shared<Tribe>(0, NationType::Fishermen);
+    tribe->tribeAbilities.push_back(AbilitiesType::DeepFloating);
+    game->tribes.push_back(tribe);
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto boat = std::make_shared<Boat>(unit, 5, 5);
+    if (auto tile = game->getTile(5, 5).lock()) {
+        tile->unit = boat;
+        tile->type = TerrainTypes::Water;
+    }
+    if (auto tile = game->getTile(6, 5).lock()) tile->type = TerrainTypes::DeepWater;
+    game->tribes[0]->units.push_back(boat);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, boat);
+
+    bool foundDeepWater = false;
+    for (const auto& tile : available) {
+        if (tile->type == TerrainTypes::DeepWater) {
+            foundDeepWater = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundDeepWater);
+}
+
+TEST(UnitMover, FriendlyUnit_BlocksMovement) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto blocker = std::make_shared<Warrior>(0, 6, 5);
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    if (auto tile = game->getTile(6, 5).lock()) {
+        tile->unit = blocker;
+        tile->type = TerrainTypes::Field;
+    }
+    if (auto tile = game->getTile(7, 5).lock()) tile->type = TerrainTypes::Field;
+
+    game->tribes[0]->units.push_back(unit);
+    game->tribes[0]->units.push_back(blocker);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    EXPECT_FALSE(std::any_of(available.begin(), available.end(),
+                             [](const auto& tile) {
+                                 return tile->x == 6 && tile->y == 5;
+                             }));
+}
+
+TEST(UnitMover, EnemyUnit_AddedToFight) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto enemy = std::make_shared<Warrior>(1, 6, 5);
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    if (auto tile = game->getTile(6, 5).lock()) {
+        tile->unit = enemy;
+        tile->type = TerrainTypes::Field;
+    }
+
+    game->tribes[0]->units.push_back(unit);
+    game->tribes[1]->units.push_back(enemy);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    EXPECT_EQ(fight.size(), 1);
+    EXPECT_EQ(fight[0]->x, 6);
+    EXPECT_EQ(fight[0]->y, 5);
+}
+
+TEST(UnitMover, EnemyUnit_BlocksFurtherMovement) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    unit->movement = 3;
+    auto enemy = std::make_shared<Warrior>(1, 6, 5);
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    if (auto tile = game->getTile(6, 5).lock()) {
+        tile->unit = enemy;
+        tile->type = TerrainTypes::Field;
+    }
+    if (auto tile = game->getTile(7, 5).lock()) tile->type = TerrainTypes::Field;
+
+    game->tribes[0]->units.push_back(unit);
+    game->tribes[1]->units.push_back(enemy);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    bool foundEnemy = false;
+    for (const auto& tile : fight) {
+        if (tile->x == 6 && tile->y == 5) {
+            foundEnemy = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundEnemy);
+
+    bool foundBehindEnemy = false;
+    for (const auto& tile : available) {
+        if (tile->x == 7 && tile->y == 5) {
+            foundBehindEnemy = true;
+            break;
+        }
+    }
+    EXPECT_FALSE(foundBehindEnemy);
+
+    bool foundOther7 = false;
+    for (const auto& tile : available) {
+        if (tile->x == 7 && tile->y != 5) {
+            foundOther7 = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundOther7);
+}
+
+TEST(UnitMover, Port_Ship_CanEnter) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Fishermen));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto boat = std::make_shared<Boat>(unit, 5, 5);
+    if (auto tile = game->getTile(5, 5).lock()) {
+        tile->unit = boat;
+        tile->type = TerrainTypes::Water;
+    }
+    if (auto tile = game->getTile(6, 5).lock()) {
+        tile->type = TerrainTypes::Field;
+        tile->buildings.push_back(std::make_unique<BasicBuilding>(Port()));
+    }
+    game->tribes[0]->units.push_back(unit);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, boat);
+
+    bool foundPort = false;
+    for (const auto& tile : available) {
+        if (!tile->buildings.empty() && tile->buildings[0]->type == BuildingType::Port) {
+            foundPort = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundPort);
+}
+
+TEST(UnitMover, Port_NonShip_WithFloating_CanEnter) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    auto tribe = std::make_shared<Tribe>(0, NationType::Fishermen);
+    tribe->tribeAbilities.push_back(AbilitiesType::Floating);
+    game->tribes.push_back(tribe);
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    if (auto tile = game->getTile(6, 5).lock()) {
+        tile->type = TerrainTypes::Field;
+        tile->buildings.push_back(std::make_unique<BasicBuilding>(Port()));
+    }
+    game->tribes[0]->units.push_back(unit);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    bool foundPort = false;
+    for (const auto& tile : available) {
+        if (!tile->buildings.empty() && tile->buildings[0]->type == BuildingType::Port) {
+            foundPort = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundPort);
+}
+
+TEST(UnitMover, MapBoundary_StopsMovement) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 0, 0);
+    unit->movement = 3;
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    for (const auto& tile : available) {
+        EXPECT_GE(tile->x, 0);
+        EXPECT_GE(tile->y, 0);
+        EXPECT_LT(tile->x, 10);
+        EXPECT_LT(tile->y, 10);
+    }
+}
+
+TEST(UnitMover, NoDuplicates_InResults) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(15);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 7, 7);
+    unit->movement = 3;
+    if (auto tile = game->getTile(7, 7).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    std::set<std::pair<int, int>> seen;
+    for (const auto& tile : available) {
+        auto key = std::make_pair(tile->x, tile->y);
+        EXPECT_EQ(seen.count(key), 0);
+        seen.insert(key);
+    }
+
+    seen.clear();
+    for (const auto& tile : fight) {
+        auto key = std::make_pair(tile->x, tile->y);
+        EXPECT_EQ(seen.count(key), 0);
+        seen.insert(key);
+    }
+}
+
+TEST(UnitMover, ConsistentResults_MultipleCalls) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(15);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 7, 7);
+    unit->movement = 2;
+    if (auto tile = game->getTile(7, 7).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    auto [avail1, fight1] = UnitMover::GetAvailableTiles(game, unit);
+    auto [avail2, fight2] = UnitMover::GetAvailableTiles(game, unit);
+    auto [avail3, fight3] = UnitMover::GetAvailableTiles(game, unit);
+
+    EXPECT_EQ(avail1.size(), avail2.size());
+    EXPECT_EQ(avail2.size(), avail3.size());
+    EXPECT_EQ(fight1.size(), fight2.size());
+    EXPECT_EQ(fight2.size(), fight3.size());
+}
+
+TEST(UnitMover, EmptyGame_ReturnsEmpty) {
+    auto game = std::weak_ptr<Game>();
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+
+    auto [available, fight] = UnitMover::GetAvailableTiles(game, unit);
+
+    EXPECT_TRUE(available.empty());
+    EXPECT_TRUE(fight.empty());
+}
+
+TEST(UnitMover, MoveUnit_BasicMovement_EmptyTile) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto targetTile = game->getTile(6, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    UnitMover::MoveUnit(game, unit, targetTile);
+
+    EXPECT_EQ(unit->x, 6);
+    EXPECT_EQ(unit->y, 5);
+    EXPECT_TRUE(game->getTile(5, 5).lock()->unit.expired());
+    EXPECT_EQ(game->getTile(6, 5).lock()->unit.lock(), unit);
+}
+
+TEST(UnitMover, MoveUnit_AttackAndMove_EnemyDies) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Giant>(0, 5, 5);
+    auto defender = std::make_shared<Warrior>(1, 6, 5);
+    auto targetTile = game->getTile(6, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(6, 5).lock()) tile->unit = defender;
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+
+    UnitMover::MoveUnit(game, attacker, targetTile);
+
+    EXPECT_EQ(attacker->x, 6);
+    EXPECT_EQ(attacker->y, 5);
+    EXPECT_LE(defender->health, 0);
+    EXPECT_TRUE(game->getTile(5, 5).lock()->unit.expired());
+    EXPECT_EQ(game->getTile(6, 5).lock()->unit.lock(), attacker);
+    EXPECT_EQ(attacker->killCounter, 1);
+}
+
+TEST(UnitMover, MoveUnit_AttackOnly_EnemySurvives) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Warrior>(0, 5, 5);
+    auto defender = std::make_shared<Warrior>(1, 6, 5);
+    auto targetTile = game->getTile(6, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(6, 5).lock()) tile->unit = defender;
+
+    int attackerXBefore = attacker->x;
+    int attackerYBefore = attacker->y;
+    int defenderHPBefore = defender->health;
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+
+    UnitMover::MoveUnit(game, attacker, targetTile);
+
+    EXPECT_EQ(attacker->x, attackerXBefore);
+    EXPECT_EQ(attacker->y, attackerYBefore);
+    EXPECT_LT(defender->health, defenderHPBefore);
+    EXPECT_EQ(game->getTile(5, 5).lock()->unit.lock(), attacker);
+    EXPECT_EQ(game->getTile(6, 5).lock()->unit.lock(), defender);
+}
+
+TEST(UnitMover, MoveUnit_InvalidTile_ThrowsException) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto farTile = game->getTile(9, 9).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    EXPECT_THROW(UnitMover::MoveUnit(game, unit, farTile), std::logic_error);
+}
+
+TEST(UnitMover, MoveUnit_FriendlyUnit_BlocksMovement) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto blocker = std::make_shared<Warrior>(0, 6, 5);
+    auto targetTile = game->getTile(6, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    if (auto tile = game->getTile(6, 5).lock()) tile->unit = blocker;
+
+    game->tribes[0]->units.push_back(unit);
+    game->tribes[0]->units.push_back(blocker);
+
+    EXPECT_THROW(UnitMover::MoveUnit(game, unit, targetTile), std::logic_error);
+}
+
+TEST(UnitMover, MoveUnit_Mountain_WithoutClimbing_Throws) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Hunters));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto mountainTile = game->getTile(6, 5).lock();
+    mountainTile->type = TerrainTypes::Mountain;
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    EXPECT_THROW(UnitMover::MoveUnit(game, unit, mountainTile), std::logic_error);
+}
+
+TEST(UnitMover, MoveUnit_Mountain_WithClimbing_Succeeds) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    auto tribe = std::make_shared<Tribe>(0, NationType::Climbers);
+    tribe->tribeAbilities.push_back(AbilitiesType::Climbing);
+    game->tribes.push_back(tribe);
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto mountainTile = game->getTile(6, 5).lock();
+    mountainTile->type = TerrainTypes::Mountain;
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    UnitMover::MoveUnit(game, unit, mountainTile);
+
+    EXPECT_EQ(unit->x, 6);
+    EXPECT_EQ(unit->y, 5);
+}
+
+TEST(UnitMover, MoveUnit_Water_Ship_Succeeds) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Fishermen));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto boat = std::make_shared<Boat>(unit, 5, 5);
+    auto waterTile = game->getTile(6, 5).lock();
+    waterTile->type = TerrainTypes::Water;
+
+    if (auto tile = game->getTile(5, 5).lock()) {
+        tile->unit = boat;
+        tile->type = TerrainTypes::Water;
+    }
+    game->tribes[0]->units.push_back(boat);
+
+    UnitMover::MoveUnit(game, boat, waterTile);
+
+    EXPECT_EQ(boat->x, 6);
+    EXPECT_EQ(boat->y, 5);
+}
+
+TEST(UnitMover, MoveUnit_Water_NonShip_Throws) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto waterTile = game->getTile(6, 5).lock();
+    waterTile->type = TerrainTypes::Water;
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    EXPECT_THROW(UnitMover::MoveUnit(game, unit, waterTile), std::logic_error);
+}
+
+TEST(UnitMover, MoveUnit_RoadBonus_Movement) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(15);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    unit->movement = 1;
+    auto farTile = game->getTile(7, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) {
+        tile->unit = unit;
+        tile->hasRoad = true;
+    }
+    if (auto tile = game->getTile(6, 5).lock()) tile->hasRoad = true;
+    if (auto tile = game->getTile(7, 5).lock()) tile->hasRoad = true;
+
+    game->tribes[0]->units.push_back(unit);
+
+    UnitMover::MoveUnit(game, unit, farTile);
+
+    EXPECT_EQ(unit->x, 7);
+    EXPECT_EQ(unit->y, 5);
+}
+
+TEST(UnitMover, MoveUnit_OutOfRange_Throws) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    unit->movement = 1;
+    auto farTile = game->getTile(8, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    EXPECT_THROW(UnitMover::MoveUnit(game, unit, farTile), std::logic_error);
+}
+
+TEST(UnitMover, MoveUnit_DiagonalMovement_Succeeds) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto diagonalTile = game->getTile(6, 6).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    UnitMover::MoveUnit(game, unit, diagonalTile);
+
+    EXPECT_EQ(unit->x, 6);
+    EXPECT_EQ(unit->y, 6);
+}
+
+TEST(UnitMover, MoveUnit_ExpiredGame_Throws) {
+    std::weak_ptr<Game> weakGame;
+    {
+        auto game = std::make_shared<Game>();
+        weakGame = game;
+    }
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto tile = std::make_shared<Tile>(6, 5, TerrainTypes::Field);
+
+    EXPECT_THROW(UnitMover::MoveUnit(weakGame, unit, tile), std::logic_error);
+}
+
+TEST(UnitMover, MoveUnit_KillCounter_Increments) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Giant>(0, 5, 5);
+    auto defender = std::make_shared<Warrior>(1, 6, 5);
+    auto targetTile = game->getTile(6, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(6, 5).lock()) tile->unit = defender;
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+
+    UnitMover::MoveUnit(game, attacker, targetTile);
+
+    EXPECT_EQ(attacker->killCounter, 1);
+}
+
+TEST(UnitMover, MoveUnit_EnemyRemovedFromTribe) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Giant>(0, 5, 5);
+    auto defender = std::make_shared<Warrior>(1, 6, 5);
+    auto targetTile = game->getTile(6, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(6, 5).lock()) tile->unit = defender;
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+
+    size_t enemyTribeSizeBefore = game->tribes[1]->units.size();
+
+    UnitMover::MoveUnit(game, attacker, targetTile);
+
+    EXPECT_EQ(game->tribes[1]->units.size(), enemyTribeSizeBefore - 1);
+}
+
+TEST(UnitMover, MoveUnit_TileUnitReference_Updated) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto targetTile = game->getTile(6, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    UnitMover::MoveUnit(game, unit, targetTile);
+
+    EXPECT_TRUE(game->getTile(5, 5).lock()->unit.expired());
+    EXPECT_EQ(game->getTile(6, 5).lock()->unit.lock(), unit);
+}
+
+TEST(UnitMover, MoveUnit_MultipleSequentialMoves) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 0, 0);
+    unit->movement = 1;
+
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    auto tile1 = game->getTile(1, 0).lock();
+    auto tile2 = game->getTile(2, 0).lock();
+    auto tile3 = game->getTile(3, 0).lock();
+
+    UnitMover::MoveUnit(game, unit, tile1);
+    EXPECT_EQ(unit->x, 1);
+
+    UnitMover::MoveUnit(game, unit, tile2);
+    EXPECT_EQ(unit->x, 2);
+
+    UnitMover::MoveUnit(game, unit, tile3);
+    EXPECT_EQ(unit->x, 3);
+}
+
+TEST(UnitMover, MoveUnit_SameTile_Throws) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    auto sameTile = game->getTile(5, 5).lock();
+
+    if (auto tile = game->getTile(5, 5).lock()) tile->unit = unit;
+    game->tribes[0]->units.push_back(unit);
+
+    EXPECT_THROW(UnitMover::MoveUnit(game, unit, sameTile), std::logic_error);
 }

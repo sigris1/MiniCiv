@@ -257,7 +257,7 @@ public:
             {},
             ResourceType::Fish,
             {},
-            {}
+            AbilitiesType::Floating
     )
     {}
 };

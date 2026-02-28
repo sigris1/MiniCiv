@@ -164,3 +164,7 @@ Tribe::Tribe(int id, NationType tribeType) :
     learnTech(std::make_shared<BasicTech>(*startTechMatcher(tribeType)));
 }
 
+int Tribe::revealTechCost(std::weak_ptr<BasicTech> tech){
+    auto curTech = tech.lock();
+    return curTech->basicCost + curTech->rangedLevel * cities.size();
+}

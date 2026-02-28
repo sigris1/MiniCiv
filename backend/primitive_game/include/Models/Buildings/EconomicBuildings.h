@@ -7,6 +7,8 @@
 
 class MarketBuilding : public EconomicalBuilding {
 public:
-    MarketBuilding() : EconomicalBuilding(5, TerrainTypes::Field, true, 0) {}
+    MarketBuilding() : EconomicalBuilding(5, TerrainTypes::Field, true, 0) {
+        type = BuildingType::Market;
+    }
 };
 

@@ -7,48 +7,64 @@
 
 class ForgeBuilding : public PopulationBuilding {
 public:
-    ForgeBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {}
+    ForgeBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {
+        type = BuildingType::Forge;
+    }
     void RecalculateSize(int newSize) override;
 };
 
 class MillBuilding : public PopulationBuilding {
 public:
-    MillBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {}
+    MillBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {
+        type = BuildingType::Mill;
+    }
     void RecalculateSize(int newSize) override;
 };
 
 class LumberHatBuilding : public PopulationBuilding {
 public:
-    LumberHatBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {}
+    LumberHatBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {
+        type = BuildingType::LumberHat;
+    }
     void RecalculateSize(int newSize) override;
 };
 
 class TempleBuilding : public PopulationBuilding {
 public:
-    TempleBuilding() : PopulationBuilding(20, TerrainTypes::Field, false, 1) {}
+    TempleBuilding() : PopulationBuilding(20, TerrainTypes::Field, false, 1) {
+        type = BuildingType::Temple;
+    }
     void RecalculateSize(int newSize) override;
 };
 
 class WaterTempleBuilding : public PopulationBuilding {
 public:
-    WaterTempleBuilding() : PopulationBuilding(20, TerrainTypes::Water, false, 1) {}
+    WaterTempleBuilding() : PopulationBuilding(20, TerrainTypes::Water, false, 1) {
+        type = BuildingType::WaterTemple;
+    }
     void RecalculateSize(int newSize) override;
 };
 
 class MountainTempleBuilding : public PopulationBuilding {
 public:
-    MountainTempleBuilding() : PopulationBuilding(20, TerrainTypes::Mountain, false, 1) {}
+    MountainTempleBuilding() : PopulationBuilding(20, TerrainTypes::Mountain, false, 1) {
+        type = BuildingType::MountainTemple;
+    }
     void RecalculateSize(int newSize) override;
 };
 
 class ForestTempleBuilding : public PopulationBuilding {
 public:
-    ForestTempleBuilding() : PopulationBuilding(20, TerrainTypes::Forest, false, 1) {}
+    ForestTempleBuilding() : PopulationBuilding(20, TerrainTypes::Forest, false, 1) {
+        type = BuildingType::ForestTemple;
+    }
     void RecalculateSize(int newSize) override;
 };
 
 class Port : public PopulationBuilding {
 public:
-    Port() : PopulationBuilding(7, TerrainTypes::Water, false, 1) {}
+    Port() : PopulationBuilding(7, TerrainTypes::Water, false, 1) {
+        type = BuildingType::Port;
+    }
     void RecalculateSize(int newSize) override;
 };

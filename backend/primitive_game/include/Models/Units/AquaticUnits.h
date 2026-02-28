@@ -7,9 +7,9 @@
 
 class Boat : public BasicUnit {
 public:
-    std::unique_ptr<BasicUnit> passenger;
+    std::shared_ptr<BasicUnit> passenger;
 
-    Boat(std::unique_ptr<BasicUnit> pas, int X, int Y):
+    Boat(std::shared_ptr<BasicUnit> pas, int X, int Y):
         passenger(std::move(pas)),
         BasicUnit(X, Y, pas->tribeId, pas->health, 0, 1, 2, 2, UnitMovementType::Aquatic, UnitAttackType::Peaceful)
     {}
@@ -21,13 +21,16 @@ public:
         passenger->getDamage(damage);
         return health > 0;
     }
+    bool hasPassenger() override {
+        return true;
+    }
 };
 
 class Scout : public BasicUnit {
 public:
-    std::unique_ptr<BasicUnit> passenger;
+    std::shared_ptr<BasicUnit> passenger;
 
-    Scout(std::unique_ptr<BasicUnit> pas, int X, int Y):
+    Scout(std::shared_ptr<BasicUnit> pas, int X, int Y):
             passenger(std::move(pas)),
             BasicUnit(X, Y, pas->tribeId, pas->health, 2, 1, 3, 2, UnitMovementType::Aquatic, UnitAttackType::Ranged)
     {}
@@ -39,13 +42,16 @@ public:
         passenger->getDamage(damage);
         return health > 0;
     }
+    bool hasPassenger() override {
+        return true;
+    }
 };
 
 class Ram : public BasicUnit {
 public:
-    std::unique_ptr<BasicUnit> passenger;
+    std::shared_ptr<BasicUnit> passenger;
 
-    Ram(std::unique_ptr<BasicUnit> pas, int X, int Y):
+    Ram(std::shared_ptr<BasicUnit> pas, int X, int Y):
             passenger(std::move(pas)),
             BasicUnit(X, Y, pas->tribeId, pas->health, 3, 3, 3, 1, UnitMovementType::Aquatic, UnitAttackType::Melee)
     {}
@@ -57,13 +63,16 @@ public:
         passenger->getDamage(damage);
         return health > 0;
     }
+    bool hasPassenger() override {
+        return true;
+    }
 };
 
 class Squadron : public BasicUnit {
 public:
-    std::unique_ptr<BasicUnit> passenger;
+    std::shared_ptr<BasicUnit> passenger;
 
-    Squadron(std::unique_ptr<BasicUnit> pas, int X, int Y):
+    Squadron(std::shared_ptr<BasicUnit> pas, int X, int Y):
         passenger(std::move(pas)),
         BasicUnit(X, Y, pas->tribeId, pas->health, 3, 2, 2, 3, UnitMovementType::Aquatic, UnitAttackType::Splash)
     {}
@@ -75,13 +84,16 @@ public:
         passenger->getDamage(damage);
         return health > 0;
     }
+    bool hasPassenger() override {
+        return true;
+    }
 };
 
 class Rampager : public BasicUnit {
 public:
-    std::unique_ptr<BasicUnit> passenger;
+    std::shared_ptr<BasicUnit> passenger;
 
-    Rampager(std::unique_ptr<BasicUnit> pas, int X, int Y):
+    Rampager(std::shared_ptr<BasicUnit> pas, int X, int Y):
             passenger(std::move(pas)),
             BasicUnit(X, Y, pas->tribeId, pas->health, 4, 4, 2, 1, UnitMovementType::Aquatic, UnitAttackType::Melee)
     {}
@@ -92,5 +104,8 @@ public:
         health -= damage;
         passenger->getDamage(damage);
         return health > 0;
+    }
+    bool hasPassenger() override {
+        return true;
     }
 };

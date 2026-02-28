@@ -12,6 +12,7 @@ enum class AbilitiesType {
     Literacy,
     Burning,
     DeepFloating,
-    Climbing
+    Climbing,
+    Floating
 };
 

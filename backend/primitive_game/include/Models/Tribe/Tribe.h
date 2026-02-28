@@ -46,6 +46,7 @@ public:
     void moveUnit(const std::weak_ptr<Tile>& from, const std::weak_ptr<Tile>& to);
     void recruitUnit(const std::weak_ptr<City>&, UnitType unitType);
     void collectResource(const std::weak_ptr<Tile>& tile, ResourceType resourceType);
+    int revealTechCost(std::weak_ptr<BasicTech> tech);
 private:
     void applyTech(const std::shared_ptr<BasicTech>& tech);
 };

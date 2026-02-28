@@ -7,6 +7,7 @@
 #include "../Terrains/TerrainTypes.h"
 #include "stdexcept"
 #include "AchiveBuildingsTypes.h"
+#include "BuildingType.h"
 
 class BasicBuilding {
 public:
@@ -19,6 +20,7 @@ public:
         isUnique(IsUnique)
     {}
     virtual ~BasicBuilding() = default;
+    BuildingType type;
 };
 
 class PopulationBuilding : public BasicBuilding {

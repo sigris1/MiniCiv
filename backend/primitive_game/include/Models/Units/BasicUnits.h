@@ -36,6 +36,7 @@ public:
     virtual ~BasicUnit() = default;
     virtual bool getDamage(int getDamage) { return false; };
     virtual double getHealthPercentage(){ return 0; };
+    virtual bool hasPassenger() { return false; }
 };
 
 class Warrior : public BasicUnit{
