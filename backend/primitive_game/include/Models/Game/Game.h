@@ -12,15 +12,11 @@ class Map;
 
 class Game{
 public:
-    static std::shared_ptr<Map> tileMap;
-    static std::vector<std::shared_ptr<Tribe>> tribes;
+    std::shared_ptr<Map> tileMap;
+    std::vector<std::shared_ptr<Tribe>> tribes;
     Game();
     bool isFinished();
     Tribe* getWinner();
-    static std::shared_ptr<Tribe> getTribe(int tribeId){
-        return tribes[tribeId];
-    }
-    static std::weak_ptr<Tile> getTile(int X, int Y){
-        return tileMap->getTile(X, Y);
-    }
+    std::shared_ptr<Tribe> getTribe(int tribeId);
+    std::weak_ptr<Tile> getTile(int X, int Y);
 };

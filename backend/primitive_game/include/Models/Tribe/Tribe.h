@@ -29,7 +29,7 @@ public:
     std::vector<std::weak_ptr<BasicTech>> knownTechs;
     std::vector<BuildingType> availableBuildings;
     std::vector<DefenceType> availableDefences;
-    std::vector<UnitType> availableUnits;
+    std::vector<UnitType> availableUnits = {UnitType::Warrior};
     std::vector<ResourceType> availableResorces;
     std::vector<AchiveType> availableAchivs;
     std::vector<AbilitiesType> tribeAbilities;

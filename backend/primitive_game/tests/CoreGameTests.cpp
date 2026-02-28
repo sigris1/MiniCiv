@@ -5,9 +5,10 @@
 #include "gtest/gtest.h"
 #include "../include/Models/Tribe/Tribe.h"
 #include "../include/Models/Buildings/EconomicBuildings.h"
+#include "../include/Models/Game/Game.h"
+#include "../include/EngineElements/DamageCalculator.h"
 
-std::vector<std::vector<std::shared_ptr<Tile>>> testMapCreation() {
-    const int size = 3;
+std::vector<std::vector<std::shared_ptr<Tile>>> testMapCreation(int size) {
 
     std::vector<std::vector<std::shared_ptr<Tile>>> map(
             size, std::vector<std::shared_ptr<Tile>>(size)
@@ -27,7 +28,7 @@ std::vector<std::vector<std::shared_ptr<Tile>>> testMapCreation() {
 }
 
 
-TEST(game_tests, city){
+TEST(Economical, city){
     Map map;
     Tile tile(1, 1, TerrainTypes::Field);
     Tribe tribe(1, NationType::Farmers);
@@ -36,23 +37,23 @@ TEST(game_tests, city){
     assert(tribe.cities.size() == 1);
 }
 
-TEST(game_tests, mapCreation){
+TEST(Economical, mapCreation){
     Map map;
-    map.tileMap = testMapCreation();
+    map.tileMap = testMapCreation(3);
 }
 
-TEST(game_tests, mew){
+TEST(Economical, mew){
     Map map;
-    map.tileMap = testMapCreation();
+    map.tileMap = testMapCreation(3);
     Tribe tribe(1, NationType::Farmers);
     City capital(map.tileMap[1][1], std::make_shared<Map>(map));
     tribe.addCity(std::make_shared<City>(capital));
     assert(tribe.cities.size() == 1);
 }
 
-TEST(game_tests, getCityIncome){
+TEST(Economical, getCityIncome){
     auto map = std::make_shared<Map>();
-    map->tileMap = testMapCreation();
+    map->tileMap = testMapCreation(3);
 
     auto tribe = std::make_shared<Tribe>(1, NationType::Farmers);
 
@@ -66,7 +67,7 @@ TEST(game_tests, getCityIncome){
     EXPECT_EQ(capital->produceCoins(), 4);
 }
 
-TEST(game_tests, getMultipleCitiesIncome){
+TEST(Economical, getMultipleCitiesIncome){
     const int size = 9;
 
     auto map = std::make_shared<Map>();
@@ -133,7 +134,7 @@ TEST(game_tests, getMultipleCitiesIncome){
     EXPECT_EQ(totalIncome, tribe->balance);
 }
 
-TEST(game_tests, cityConquestIncome9x9){
+TEST(Economical, cityConquestIncome9x9){
     const int size = 9;
 
     auto map = std::make_shared<Map>();
@@ -212,4 +213,423 @@ TEST(game_tests, cityConquestIncome9x9){
 
     EXPECT_EQ(tribe1->balance, (8 + 5) * 2 + 6);
     EXPECT_EQ(tribe2->balance, 6);
+}
+
+TEST(Battle, WarriorVsWarrior_SingleExchange) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Warrior>(0, 0, 0);
+    auto defender = std::make_shared<Warrior>(1, 1, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    bool result = DamageCalculator::Fight(game, attacker, defender);
+
+    EXPECT_EQ(defender->health, 5);
+    EXPECT_LT(attacker->health, 10);
+    EXPECT_TRUE(!result);
+}
+
+TEST(Battle, GiantKillsWarrior_CompleteRemoval) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Giant>(0, 0, 0);
+    auto defender = std::make_shared<Warrior>(1, 1, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    DamageCalculator::Fight(game, attacker, defender);
+
+    EXPECT_LE(defender->health, 0);
+    EXPECT_EQ(game->tribes[1]->units.size(), 0);
+    EXPECT_TRUE(game->getTile(1, 0).lock()->unit.expired());
+
+    // TODO проверка о том, что юнит перемещается, если убивает другого
+    // EXPECT_TRUE(game->getTile(1, 0).lock()->unit.lock() == attacker);
+
+    EXPECT_EQ(attacker->killCounter, 1);
+}
+
+TEST(Battle, Melee_BackdraftBothTakeDamage) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::ShieldBearers));
+
+    auto attacker = std::make_shared<Warrior>(0, 0, 0);
+    auto defender = std::make_shared<Defender>(1, 1, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    int attackerHP = attacker->health;
+    int defenderHP = defender->health;
+
+    DamageCalculator::Fight(game, attacker, defender);
+
+    EXPECT_LT(defender->health, defenderHP);
+    EXPECT_LT(attacker->health, attackerHP);
+}
+
+TEST(Battle, Ranged_NoBackdraftDamage) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Archers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Archer>(0, 0, 0);
+    auto defender = std::make_shared<Warrior>(1, 2, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(2, 0).lock()) tile->unit = defender;
+
+    int attackerHP = attacker->health;
+    int defenderHP = defender->health;
+
+    DamageCalculator::Fight(game, attacker, defender);
+
+    EXPECT_LT(defender->health, defenderHP);
+    EXPECT_EQ(attacker->health, attackerHP);
+}
+
+TEST(Battle, Backdraft_KillsAttackerAndCleanup) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::ShieldBearers));
+
+    auto attacker = std::make_shared<Warrior>(0, 0, 0);
+    auto defender = std::make_shared<Defender>(1, 1, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    while (attacker->health > 0 && defender->health > 0) {
+        DamageCalculator::Fight(game, attacker, defender);
+    }
+
+    EXPECT_EQ(game->tribes[0]->units.size(), 0);
+    EXPECT_TRUE(game->getTile(0, 0).lock()->unit.expired());
+    EXPECT_EQ(defender->killCounter, 1);
+}
+
+TEST(Battle, ForestDefence_ReducesIncomingDamage) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    if (auto tile = game->getTile(1, 0).lock()) tile->type = TerrainTypes::Forest;
+
+    auto attacker = std::make_shared<Warrior>(0, 0, 0);
+    auto defender = std::make_shared<Warrior>(1, 1, 0);
+
+    auto tribeB = game->tribes[1];
+    tribeB->availableDefences.push_back(DefenceType::Forest);
+
+    tribeB->units.push_back(defender);
+    game->tribes[0]->units.push_back(attacker);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    int defenderHPBefore = defender->health;
+    DamageCalculator::Fight(game, attacker, defender);
+    int damageTaken = defenderHPBefore - defender->health;
+
+    EXPECT_EQ(damageTaken, 3);
+}
+
+TEST(Battle, CityDefence_ReducesIncomingDamage) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto city = std::make_shared<City>(game->getTile(1, 0).lock(), game->tileMap);
+    city->tribeId = 1;
+    city->defenceBonus = 1.5;
+
+    auto tribeB = game->tribes[1];
+    tribeB->cities.push_back(city);
+    tribeB->capital = city;
+
+    auto attacker = std::make_shared<Warrior>(0, 0, 0);
+    auto defender = std::make_shared<Warrior>(1, 1, 0);
+
+    tribeB->units.push_back(defender);
+    game->tribes[0]->units.push_back(attacker);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+    if (auto tile = game->getTile(1, 0).lock()) tile->city = city;
+
+    int defenderHPBefore = defender->health;
+    DamageCalculator::Fight(game, attacker, defender);
+    int damageWithCity = defenderHPBefore - defender->health;
+
+    EXPECT_EQ(damageWithCity, 3);
+}
+
+TEST(Battle, Diagonal_MeleeWorks) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Warrior>(0, 0, 0);
+    auto defender = std::make_shared<Warrior>(1, 1, 1);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 1).lock()) tile->unit = defender;
+
+    int defenderHP = defender->health;
+    DamageCalculator::Fight(game, attacker, defender);
+
+    EXPECT_LT(defender->health, defenderHP);
+    EXPECT_LT(attacker->health, 10);
+}
+
+TEST(Battle, PriestVsDefender_UnitConverted) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Peacemakers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::ShieldBearers));
+
+    auto priest = std::make_shared<Priest>(0, 0, 0);
+    auto defender = std::make_shared<Defender>(1, 1, 0);
+
+    game->tribes[0]->units.push_back(priest);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = priest;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    size_t tribe0UnitsBefore = game->tribes[0]->units.size();
+    size_t tribe1UnitsBefore = game->tribes[1]->units.size();
+
+    DamageCalculator::Fight(game, priest, defender);
+
+    EXPECT_EQ(defender->tribeId, 0);
+    EXPECT_EQ(game->tribes[0]->units.size(), tribe0UnitsBefore + 1);
+    EXPECT_EQ(game->tribes[1]->units.size(), tribe1UnitsBefore - 1);
+
+    auto tile = game->getTile(1, 0).lock();
+    EXPECT_TRUE(tile);
+    EXPECT_TRUE(tile->unit.lock());
+    EXPECT_EQ(tile->unit.lock(), defender);
+    EXPECT_EQ(defender->health, 15);
+}
+
+TEST(Battle, LowHealthAttacker_DealsLessDamage) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto fullHealthAttacker = std::make_shared<Warrior>(0, 0, 0);
+    auto halfHealthAttacker = std::make_shared<Warrior>(0, 3, 0);
+    halfHealthAttacker->health = 5;
+    auto defender1 = std::make_shared<Warrior>(1, 1, 0);
+    auto defender2 = std::make_shared<Warrior>(1, 4, 0);
+
+    game->tribes[0]->units.push_back(fullHealthAttacker);
+    game->tribes[0]->units.push_back(halfHealthAttacker);
+    game->tribes[1]->units.push_back(defender1);
+    game->tribes[1]->units.push_back(defender2);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = fullHealthAttacker;
+    if (auto tile = game->getTile(3, 0).lock()) tile->unit = halfHealthAttacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender1;
+    if (auto tile = game->getTile(4, 0).lock()) tile->unit = defender2;
+
+    DamageCalculator::Fight(game, fullHealthAttacker, defender1);
+    DamageCalculator::Fight(game, halfHealthAttacker, defender2);
+
+    EXPECT_LE(defender1->health, defender2->health);
+}
+
+TEST(Battle, Catapult_Ranged_KillsAtDistance) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Catapult>(0, 0, 0);
+    auto defender = std::make_shared<Warrior>(1, 3, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(3, 0).lock()) tile->unit = defender;
+
+    DamageCalculator::Fight(game, attacker, defender);
+
+    EXPECT_LE(defender->health, 0);
+    EXPECT_EQ(game->tribes[1]->units.size(), 0);
+    EXPECT_EQ(attacker->health, 10);
+}
+
+TEST(Battle, Knight_HighDamage_KillsQuickly) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Riders));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Knight>(0, 0, 0);
+    auto defender = std::make_shared<Warrior>(1, 1, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    DamageCalculator::Fight(game, attacker, defender);
+    DamageCalculator::Fight(game, attacker, defender);
+
+    EXPECT_LE(defender->health, 0);
+    EXPECT_EQ(game->tribes[1]->units.size(), 0);
+    EXPECT_EQ(attacker->killCounter, 1);
+}
+
+TEST(Battle, SwordsmanVsArcher_MeleeExchange) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Swordsmen));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Archers));
+
+    auto attacker = std::make_shared<Swordsman>(0, 0, 0);
+    auto defender = std::make_shared<Archer>(1, 1, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    int swordsmanHealthBefore = attacker->health;
+    defender->health = 20;
+    int archerHealthBefore = defender->health;
+
+    DamageCalculator::Fight(game, attacker, defender);
+
+    EXPECT_LT(attacker->health, swordsmanHealthBefore);
+    EXPECT_LT(defender->health, archerHealthBefore);
+}
+
+TEST(Battle, Rider_MobilityAdvantage) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Riders));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker = std::make_shared<Rider>(0, 0, 0);
+    auto defender = std::make_shared<Warrior>(1, 1, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    int defenderHP = defender->health;
+
+    DamageCalculator::Fight(game, attacker, defender);
+
+    EXPECT_LT(defender->health, defenderHP);
+}
+
+TEST(Battle, MultipleExchanges_WarriorVsDefender) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game->tribes.push_back(std::make_shared<Tribe>(1, NationType::ShieldBearers));
+
+    auto attacker = std::make_shared<Warrior>(0, 0, 0);
+    auto defender = std::make_shared<Defender>(1, 1, 0);
+
+    game->tribes[0]->units.push_back(attacker);
+    game->tribes[1]->units.push_back(defender);
+    if (auto tile = game->getTile(0, 0).lock()) tile->unit = attacker;
+    if (auto tile = game->getTile(1, 0).lock()) tile->unit = defender;
+
+    int exchanges = 0;
+    while (attacker->health > 0 && defender->health > 0 && exchanges < 10) {
+        DamageCalculator::Fight(game, attacker, defender);
+        exchanges++;
+    }
+
+    EXPECT_TRUE(attacker->health <= 0 || defender->health <= 0);
+    if (defender->health <= 0) {
+        EXPECT_EQ(game->tribes[1]->units.size(), 0);
+    }
+    if (attacker->health <= 0) {
+        EXPECT_EQ(game->tribes[0]->units.size(), 0);
+    }
+}
+
+TEST(Battle, MultipleGames_Isolated) {
+    auto game1 = std::make_shared<Game>();
+    auto game2 = std::make_shared<Game>();
+
+    game1->tileMap->tileMap = testMapCreation(10);
+    game2->tileMap->tileMap = testMapCreation(10);
+
+    game1->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+    game1->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
+
+    auto attacker1 = std::make_shared<Warrior>(0, 0, 0);
+    auto defender1 = std::make_shared<Warrior>(1, 1, 0);
+
+    game1->tribes[0]->units.push_back(attacker1);
+    game1->tribes[1]->units.push_back(defender1);
+    if (auto tile = game1->getTile(0, 0).lock()) tile->unit = attacker1;
+    if (auto tile = game1->getTile(1, 0).lock()) tile->unit = defender1;
+
+    game2->tribes.push_back(std::make_shared<Tribe>(0, NationType::Archers));
+    game2->tribes.push_back(std::make_shared<Tribe>(1, NationType::ShieldBearers));
+
+    auto attacker2 = std::make_shared<Archer>(0, 5, 5);
+    auto defender2 = std::make_shared<Defender>(1, 6, 5);
+
+    game2->tribes[0]->units.push_back(attacker2);
+    game2->tribes[1]->units.push_back(defender2);
+    if (auto tile = game2->getTile(5, 5).lock()) tile->unit = attacker2;
+    if (auto tile = game2->getTile(6, 5).lock()) tile->unit = defender2;
+
+    DamageCalculator::Fight(game1, attacker1, defender1);
+    DamageCalculator::Fight(game2, attacker2, defender2);
+
+    EXPECT_EQ(game1->tribes[0]->units.size(), 1);
+    EXPECT_EQ(game2->tribes[0]->units.size(), 0);
+
+    EXPECT_NE(game1->getTile(0, 0).lock(), game2->getTile(0, 0).lock());
+}
+
+TEST(Battle, GameReset_ClearsState) {
+    auto game = std::make_shared<Game>();
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
+
+    EXPECT_EQ(game->tribes.size(), 1);
+
+    game->tribes.clear();
+    game->tileMap = std::make_shared<Map>();
+    game->tileMap->generateMap();
+
+    EXPECT_EQ(game->tribes.size(), 0);
+    EXPECT_NE(game->tileMap, nullptr);
 }

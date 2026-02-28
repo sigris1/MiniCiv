@@ -7,6 +7,7 @@
 #include "Models/Tile/Tile.h"
 #include "Models/Units/BasicUnits.h"
 
+
 int EconomicalImprovement::apply(std::weak_ptr<City> improving) {
     auto city = improving.lock();
     city->basicEconomic += bonus;
@@ -24,7 +25,7 @@ int DefenceImprovement::apply(std::weak_ptr<City> improving) {
 int GiantImprovement::apply(std::weak_ptr<City> improving) {
     auto city = improving.lock();
     auto cityTile = city->mainTile.lock();
-    cityTile->specialEmplaceUnit(std::make_unique<BasicUnit>(Giant(city->tribeId)));
+    cityTile->specialEmplaceUnit(std::make_unique<BasicUnit>(Giant(city->tribeId, cityTile->x, cityTile->y)));
     return 0;
 }
 

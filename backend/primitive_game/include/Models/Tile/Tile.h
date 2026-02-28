@@ -28,9 +28,9 @@ public:
     std::weak_ptr<City> city;
     Tile(int X, int Y, TerrainTypes type);
     Tile(const Tile& tile);
-    void build(std::unique_ptr<BasicBuilding> newBuilding);
-    void emplaceUnit(std::unique_ptr<BasicUnit> unit);
-    void specialEmplaceUnit(std::unique_ptr<BasicUnit> unit);
+    void build(std::shared_ptr<BasicBuilding> newBuilding);
+    void emplaceUnit(std::shared_ptr<BasicUnit> unit);
+    void specialEmplaceUnit(std::shared_ptr<BasicUnit> unit);
     void collectResource(ResourceType type);
     int collectIncome();
 };

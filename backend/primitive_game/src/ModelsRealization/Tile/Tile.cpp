@@ -5,7 +5,7 @@
 #include "Models/Tile/Tile.h"
 #include "stdexcept"
 
-void Tile::build(std::unique_ptr<BasicBuilding> newBuilding) {
+void Tile::build(std::shared_ptr<BasicBuilding> newBuilding) {
     //TODO добавить метчер ресурстайп -> ресур с, а потом если всё ок, то удалить ресурс с клетки, так же обработат постройку справйтБилдинг, если оно нужно
     //TODO докинуть население городу, к которому относиться тайл, считая, что возможность сбор ресурсов мы провалидировали ранее
     //TODO но только аналогичная шутка со зданиями, а не ресурсами
@@ -26,9 +26,9 @@ void Tile::collectResource(ResourceType type) {
     //TODO докинуть население городу, к которому относиться тайл, считая, что возможность сбор ресурсов мы провалидировали ранее
 }
 
-void Tile::emplaceUnit(std::unique_ptr<BasicUnit> newUnit) {
-    if (unit == nullptr){
-        unit = std::move(newUnit);
+void Tile::emplaceUnit(std::shared_ptr<BasicUnit> newUnit) {
+    if (!unit.expired()){
+        unit = newUnit;
     } else {
         throw std::logic_error("There's already one unit in the tile");
     }
@@ -42,9 +42,9 @@ Tile::Tile(int X, int Y, TerrainTypes type) :
     defenceModifier = getDefenceModifier(type);
 }
 
-void Tile::specialEmplaceUnit(std::unique_ptr<BasicUnit> newUnit) {
-    if (unit == nullptr){
-        unit = std::move(newUnit);
+void Tile::specialEmplaceUnit(std::shared_ptr<BasicUnit> newUnit) {
+    if (!unit.expired()){
+        unit = newUnit;
     } else {
       //TODO Добавить вынужденное перемещение юнита, который сейчас в городе в одну из соседних клеток, когда сделаю movementManager
     }
@@ -60,8 +60,8 @@ Tile::Tile(const Tile& other)
           defenceModifier(other.defenceModifier),
           city(other.city)
 {
-    if (other.unit) {
-        unit = std::make_unique<BasicUnit>(*other.unit);
+    if (other.unit.expired()) {
+        unit = (other.unit);
     }
 
     for (const auto& r : other.resources) {

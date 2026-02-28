@@ -42,7 +42,7 @@ class Warrior : public BasicUnit{
 public:
     explicit Warrior(int unitTribeId, int X, int Y) : BasicUnit(X, Y, unitTribeId, 10, 2, 2, 1, 1, UnitMovementType::Overland, UnitAttackType::Melee){}
     double getHealthPercentage() override{
-        return health / 10;
+        return double(health) / 10;
     }
 
     bool getDamage(int damage) override {
@@ -55,7 +55,7 @@ class Rider : public BasicUnit{
 public:
     explicit Rider(int unitTribeId,int X, int Y) : BasicUnit(X, Y, unitTribeId, 10, 2, 1, 2, 1, UnitMovementType::Overland, UnitAttackType::Melee){}
     double getHealthPercentage() override{
-        return health / 10;
+        return double(health) / 10;
     }
     bool getDamage(int damage) override {
         health -= damage;
@@ -67,7 +67,7 @@ class Knight : public BasicUnit{
 public:
     explicit Knight(int unitTribeId, int X, int Y) : BasicUnit(X, Y, unitTribeId, 10, 3.5, 1, 3, 1, UnitMovementType::Overland, UnitAttackType::Melee){}
     double getHealthPercentage() override{
-        return health / 10;
+        return double(health) / 10;
     }
     bool getDamage(int damage) override {
         health -= damage;
@@ -79,7 +79,7 @@ class Defender : public BasicUnit{
 public:
     explicit Defender(int unitTribeId, int X, int Y) : BasicUnit(X, Y, unitTribeId, 15, 1, 3, 1, 1, UnitMovementType::Overland, UnitAttackType::Melee){}
     double getHealthPercentage() override{
-        return health / 15;
+        return double(health) / 15;
     }
     bool getDamage(int damage) override {
         health -= damage;
@@ -91,7 +91,7 @@ class Swordsman : public BasicUnit{
 public:
     explicit Swordsman(int unitTribeId, int X, int Y) : BasicUnit(X, Y, unitTribeId, 15, 3, 3, 1, 1, UnitMovementType::Overland, UnitAttackType::Melee){}
     double getHealthPercentage() override{
-        return health / 15;
+        return double(health) / 15;
     }
     bool getDamage(int damage) override {
         health -= damage;
@@ -103,7 +103,7 @@ class Priest : public BasicUnit{
 public:
     explicit Priest(int unitTribeId, int X, int Y) : BasicUnit(X, Y, unitTribeId, 10, 0, 1, 1, 1, UnitMovementType::Overland, UnitAttackType::Enticement){}
     double getHealthPercentage() override{
-        return health / 10;
+        return double(health) / 10;
     }
     bool getDamage(int damage) override {
         health -= damage;
@@ -115,7 +115,7 @@ class Archer : public BasicUnit{
 public:
     explicit Archer(int unitTribeId, int X, int Y) : BasicUnit(X, Y, unitTribeId, 10, 2, 1, 1, 2, UnitMovementType::Overland, UnitAttackType::Ranged){}
     double getHealthPercentage() override{
-        return health / 10;
+        return double(health) / 10;
     }
     bool getDamage(int damage) override {
         health -= damage;
@@ -127,7 +127,7 @@ class Catapult : public BasicUnit{
 public:
     explicit Catapult(int unitTribeId, int X, int Y) : BasicUnit(X, Y, unitTribeId, 10, 4, 0, 1, 3, UnitMovementType::Overland, UnitAttackType::Ranged){}
     double getHealthPercentage() override{
-        return health / 10;
+        return double(health) / 10;
     }
     bool getDamage(int damage) override {
         health -= damage;
@@ -139,7 +139,7 @@ class Giant : public BasicUnit{
 public:
     explicit Giant(int unitTribeId, int X, int Y) : BasicUnit(X, Y, unitTribeId, 40, 5, 4, 1, 1, UnitMovementType::Overland, UnitAttackType::Melee){}
     double getHealthPercentage() override{
-        return health / 40;
+        return double(health) / 40;
     }
     bool getDamage(int damage) override {
         health -= damage;

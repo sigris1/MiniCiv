@@ -18,6 +18,7 @@ public:
     int unitCount = 0;
     int tribeId = -1;
     bool advancedTerritory = false;
+    double defenceBonus = 2;
     std::weak_ptr<Tile> mainTile;
     std::weak_ptr<Map> gameMap;
     City(std::shared_ptr<Tile> tile, std::shared_ptr<Map> map) :

@@ -26,3 +26,11 @@ Tribe* Game::getWinner() {
         }
     }
 }
+
+std::shared_ptr<Tribe> Game::getTribe(int tribeId) {
+    return tribes[tribeId];
+}
+
+std::weak_ptr<Tile> Game::getTile(int X, int Y) {
+    return tileMap->getTile(X, Y);
+}
