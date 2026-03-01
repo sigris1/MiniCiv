@@ -9,6 +9,11 @@
 #include "../include/EngineElements/DamageCalculator.h"
 #include "../include/EngineElements/UnitsMover.h"
 #include "Models/Units/AquaticUnits.h"
+#include "../include/Models/Buildings/BasicBuilding.h"
+#include "../include/Models/Buildings/PopulationBuildings.h"
+#include "../include/EngineElements/TypeMatcher.h"
+#include "../include/EngineElements/DamageCalculator.h"
+#include "iostream"
 
 std::vector<std::vector<std::shared_ptr<Tile>>> testMapCreation(int size) {
 
@@ -29,6 +34,36 @@ std::vector<std::vector<std::shared_ptr<Tile>>> testMapCreation(int size) {
     return map;
 }
 
+int countNearObjectstest(std::weak_ptr<Game> game, const std::weak_ptr<Tile>& tile, BuildingType type){
+    auto curTile = tile.lock();
+    auto curGame = game.lock();
+
+    int startX = curTile->x;
+    int startY = curTile->y;
+
+    int size = curGame->tileMap->tileMap.size();
+
+    int count = 0;
+    for (int dx = -1; dx < 2; ++dx){
+        for (int dy = -1; dy < 2; ++dy){
+            int tileX = startX + dx;
+            int tileY = startY + dy;
+
+            if (tileX >= 0 && tileX < size &&
+                tileY >= 0 && tileY < size) {
+
+                auto targetTile = curGame->tileMap->getTile(tileX, tileY).lock();
+                for (const auto& b : targetTile->buildings){
+                    if (b->type == type){
+                        count++;
+                    }
+                }
+            }
+        }
+    }
+    return count;
+}
+
 
 TEST(Economical, city){
     Map map;
@@ -45,11 +80,12 @@ TEST(Economical, mapCreation){
 }
 
 TEST(Economical, mew){
-    Map map;
-    map.tileMap = testMapCreation(3);
+    auto map = std::make_shared<Map>();
+    map->tileMap = testMapCreation(3);
     Tribe tribe(1, NationType::Farmers);
-    City capital(map.tileMap[1][1], std::make_shared<Map>(map));
-    tribe.addCity(std::make_shared<City>(capital));
+    auto capital = std::make_shared<City>(map->tileMap[1][1], map);
+    capital->getStartTerritory();
+    tribe.addCity(capital);
     assert(tribe.cities.size() == 1);
 }
 
@@ -61,7 +97,7 @@ TEST(Economical, getCityIncome){
 
     auto capital = std::make_shared<City>(map->tileMap[1][1], map);
     capital->tribeId = 1;
-
+    capital->getStartTerritory();
     auto market = std::make_unique<MarketBuilding>();
     market->RecalculateEconomic(4);
     map->tileMap[0][0]->buildings.push_back(std::move(market));
@@ -97,6 +133,10 @@ TEST(Economical, getMultipleCitiesIncome){
     tribe->addCity(city2);
     tribe->addCity(city3);
     tribe->addCity(city4);
+    city1->getStartTerritory();
+    city2->getStartTerritory();
+    city3->getStartTerritory();
+    city4->getStartTerritory();
     for (int i = 0; i < 3; ++i) {
         auto market = std::make_unique<MarketBuilding>();
         market->RecalculateEconomic(4);
@@ -163,6 +203,9 @@ TEST(Economical, cityConquestIncome9x9){
     tribe1->addCity(city1);
     tribe1->addCity(city2);
     tribe2->addCity(city3);
+    city1->getStartTerritory();
+    city2->getStartTerritory();
+    city3->getStartTerritory();
 
     auto markArea = [&](std::shared_ptr<City> city, int tribeId){
         int cx = city->mainTile.lock()->x;
@@ -257,9 +300,6 @@ TEST(Battle, GiantKillsWarrior_CompleteRemoval) {
     EXPECT_LE(defender->health, 0);
     EXPECT_EQ(game->tribes[1]->units.size(), 0);
     EXPECT_TRUE(game->getTile(1, 0).lock()->unit.expired());
-
-    // TODO проверка о том, что юнит перемещается, если убивает другого
-    // EXPECT_TRUE(game->getTile(1, 0).lock()->unit.lock() == attacker);
 
     EXPECT_EQ(attacker->killCounter, 1);
 }
@@ -1411,4 +1451,415 @@ TEST(UnitMover, MoveUnit_SameTile_Throws) {
     game->tribes[0]->units.push_back(unit);
 
     EXPECT_THROW(UnitMover::MoveUnit(game, unit, sameTile), std::logic_error);
+}
+
+TEST(Building, Build_WithUniquePtr_Succeeds) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
+
+    auto tile = game->getTile(5, 5).lock();
+    tile->ownerTribeId = 0;
+
+    auto city = std::make_shared<City>(tile, game->tileMap);
+    city->tribeId = 0;
+    tile->ownedBy = city;
+    game->tribes[0]->cities.push_back(city);
+
+    auto building = std::make_unique<ForgeBuilding>();
+    tile->build(game, std::move(building));
+
+    EXPECT_EQ(tile->buildings.size(), 1);
+    EXPECT_EQ(tile->buildings[0]->type, BuildingType::Forge);
+}
+
+TEST(Building, Build_UpdatesCityPopulation) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
+
+    auto centerTile = game->getTile(5, 5).lock();
+    centerTile->ownerTribeId = 0;
+
+    auto city = std::make_shared<City>(centerTile, game->tileMap);
+    city->tribeId = 0;
+    city->currentPopulation = -1;
+    centerTile->ownedBy = city;
+    game->tribes[0]->cities.push_back(city);
+
+    auto farmTile = game->getTile(6, 5).lock();
+    farmTile->ownerTribeId = 0;
+    farmTile->ownedBy = city;
+
+    auto farmBuilding = std::make_unique<FarmingBuilding>();
+    farmTile->build(game, std::move(farmBuilding));
+
+    auto millTile = game->getTile(6, 6).lock();
+    millTile->ownerTribeId = 0;
+    millTile->ownedBy = city;
+
+    auto millBuilding = std::make_unique<MillBuilding>();
+    millTile->build(game, std::move(millBuilding));
+
+    EXPECT_GT(city->currentPopulation, 0);
+}
+
+TEST(Resource, CollectResource_WithCity_AddsPopulation) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
+
+    auto tile = game->getTile(5, 5).lock();
+    auto resource = std::make_unique<FishResource>();
+    tile->resources.push_back(std::move(resource));
+
+    auto city = std::make_shared<City>(tile, game->tileMap);
+    city->tribeId = 0;
+    city->currentPopulation = 0;
+    tile->ownedBy = city;
+    game->tribes[0]->cities.push_back(city);
+
+    tile->collectResource(game, ResourceType::Fish);
+
+    EXPECT_EQ(city->currentPopulation, 1);
+    EXPECT_TRUE(tile->resources.empty());
+}
+
+TEST(Resource, CollectResource_NoCity_Throws) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+
+    auto tile = game->getTile(5, 5).lock();
+    auto resource = std::make_unique<FishResource>();
+    resource->value = 5;
+    tile->resources.push_back(std::move(resource));
+
+    EXPECT_THROW(tile->collectResource(game, ResourceType::Fish), std::logic_error);
+}
+
+TEST(Resource, CollectResource_WrongType_Throws) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
+
+    auto tile = game->getTile(5, 5).lock();
+    auto resource = std::make_unique<FishResource>();
+    resource->value = 5;
+    tile->resources.push_back(std::move(resource));
+
+    auto city = std::make_shared<City>(tile, game->tileMap);
+    city->tribeId = 0;
+    tile->ownedBy = city;
+
+    EXPECT_THROW(tile->collectResource(game, ResourceType::Forest), std::logic_error);
+}
+
+TEST(Income, CollectIncome_NoBuildings_ReturnsZero) {
+    auto tile = std::make_shared<Tile>(0, 0, TerrainTypes::Field);
+
+    int income = tile->collectIncome();
+
+    EXPECT_EQ(income, 0);
+}
+
+
+TEST(Income, TribeProduceIncome_AggregatesFromAllCities) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    Tribe tribe(0, NationType::Farmers);
+
+    auto tile1 = game->getTile(3, 3).lock();
+    auto city1 = std::make_shared<City>(tile1, game->tileMap);
+    city1->tribeId = 0;
+    tile1->ownedBy = city1;
+    tribe.addCity(city1);
+
+    auto tile2 = game->getTile(7, 7).lock();
+    auto city2 = std::make_shared<City>(tile2, game->tileMap);
+    city2->tribeId = 0;
+    tile2->ownedBy = city2;
+    tribe.addCity(city2);
+
+    tribe.produceIncome();
+}
+
+TEST(Population, RecalculateSize_Forge_DoublesPopulation) {
+    auto forge = std::make_unique<ForgeBuilding>();
+    forge->size = 5;
+    forge->population = 10;
+
+    forge->RecalculateSize(5);
+
+    EXPECT_EQ(forge->population, 10);
+}
+
+TEST(Population, RecalculateSize_Mill_EqualsSize) {
+    auto mill = std::make_unique<MillBuilding>();
+    mill->size = 5;
+    mill->population = 10;
+
+    mill->RecalculateSize(5);
+
+    EXPECT_EQ(mill->population, 5);
+}
+
+TEST(Population, RecalculateSize_Temple_NoChange) {
+    auto temple = std::make_unique<TempleBuilding>();
+    temple->size = 5;
+    temple->population = 10;
+
+    temple->RecalculateSize(5);
+
+    EXPECT_EQ(temple->population, 10);
+}
+
+TEST(Population, CityRecalculatePopulation_AggregatesDelta) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
+
+    auto centerTile = game->getTile(5, 5).lock();
+    auto city = std::make_shared<City>(centerTile, game->tileMap);
+    city->tribeId = 0;
+    city->currentPopulation = 100;
+    centerTile->ownedBy = city;
+
+    auto neighborTile = game->getTile(6, 5).lock();
+    neighborTile->ownedBy = city;
+    auto mill = std::make_unique<MillBuilding>();
+    mill->size = 5;
+    mill->population = 10;
+    neighborTile->buildings.push_back(std::move(mill));
+
+    game->tribes[0]->cities.push_back(city);
+    city->RecalculatePopulation();
+
+    EXPECT_NE(city->currentPopulation, 100);
+}
+
+TEST(Population, TribeCheckCities_RecalculatesAllCities) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    Tribe tribe(0, NationType::Farmers);
+
+    auto tile1 = game->getTile(3, 3).lock();
+    auto city1 = std::make_shared<City>(tile1, game->tileMap);
+    city1->tribeId = 0;
+    tile1->ownedBy = city1;
+    tribe.addCity(city1);
+
+    auto tile2 = game->getTile(7, 7).lock();
+    auto city2 = std::make_shared<City>(tile2, game->tileMap);
+    city2->tribeId = 0;
+    tile2->ownedBy = city2;
+    tribe.addCity(city2);
+
+    tribe.checkCities();
+}
+
+TEST(Territory, GetStartTerritory_ClaimsAdjacentTiles) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+
+    auto centerTile = game->getTile(5, 5).lock();
+    auto city = std::make_shared<City>(centerTile, game->tileMap);
+    city->tribeId = 1;
+    centerTile->ownedBy = city;
+
+    city->getStartTerritory();
+
+    auto neighborTile = game->getTile(6, 5).lock();
+    EXPECT_FALSE(neighborTile->ownedBy.expired());
+}
+
+TEST(Territory, GetStartTerritory_DoesNotClaimOccupiedTiles) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+
+    auto centerTile = game->getTile(5, 5).lock();
+    auto city1 = std::make_shared<City>(centerTile, game->tileMap);
+    city1->tribeId = 1;
+    centerTile->ownedBy = city1;
+
+    auto neighborTile = game->getTile(6, 5).lock();
+    auto city2 = std::make_shared<City>(neighborTile, game->tileMap);
+    city2->tribeId = 2;
+    neighborTile->ownedBy = city2;
+
+    city1->getStartTerritory();
+
+    auto owner = neighborTile->ownedBy.lock();
+    EXPECT_EQ(owner->tribeId, 2);
+}
+
+TEST(Territory, GetStartTerritory_HandlesMapBoundaries) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(3);
+
+    auto cornerTile = game->getTile(0, 0).lock();
+    auto city = std::make_shared<City>(cornerTile, game->tileMap);
+    city->tribeId = 1;
+    cornerTile->ownedBy = city;
+
+    city->getStartTerritory();
+
+    auto validTile1 = game->getTile(1, 0).lock();
+    auto validTile2 = game->getTile(0, 1).lock();
+    EXPECT_FALSE(validTile1->ownedBy.expired());
+    EXPECT_FALSE(validTile2->ownedBy.expired());
+}
+
+TEST(TypeMatcher, GetResourceByType_Invalid_Throws) {
+    EXPECT_THROW(TypeMatcher::getResourceByResourceType(ResourceType(99)), std::logic_error);
+}
+
+TEST(TypeMatcher, GetBuildByType_Forge) {
+    auto building = TypeMatcher::getBuildByBuildingType(BuildingType::Forge);
+    EXPECT_EQ(building->type, BuildingType::Forge);
+}
+
+TEST(TypeMatcher, GetBuildByType_Port) {
+    auto building = TypeMatcher::getBuildByBuildingType(BuildingType::Port);
+    EXPECT_EQ(building->type, BuildingType::Port);
+}
+
+TEST(TypeMatcher, GetBuildByType_Invalid_Throws) {
+    EXPECT_THROW(TypeMatcher::getBuildByBuildingType(BuildingType(99)), std::logic_error);
+}
+
+TEST(TypeMatcher, GetUnitByType_Warrior) {
+    auto unit = TypeMatcher::getUnitByUnitType(UnitType::Warrior, 0);
+    EXPECT_NE(unit, nullptr);
+}
+
+TEST(TypeMatcher, GetUnitByType_Invalid_Throws) {
+    EXPECT_THROW(TypeMatcher::getUnitByUnitType(UnitType(99), 0), std::logic_error);
+}
+
+TEST(TypeMatcher, GetDefenceType_Forest) {
+    auto defence = TypeMatcher::getDefenceTypeByTerrainType(TerrainTypes::Forest);
+    EXPECT_EQ(defence, DefenceType::Forest);
+}
+
+TEST(TypeMatcher, GetDefenceType_Mountain) {
+    auto defence = TypeMatcher::getDefenceTypeByTerrainType(TerrainTypes::Mountain);
+    EXPECT_EQ(defence, DefenceType::Mountain);
+}
+
+TEST(TypeMatcher, GetDefenceType_Field_None) {
+    auto defence = TypeMatcher::getDefenceTypeByTerrainType(TerrainTypes::Field);
+    EXPECT_EQ(defence, DefenceType::None);
+}
+
+TEST(HasNearObj, Forge_Nearby_ReturnsTrue) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+
+    auto centerTile = game->getTile(5, 5).lock();
+    auto neighborTile = game->getTile(6, 5).lock();
+    neighborTile->buildings.push_back(std::make_unique<ForgeBuilding>());
+
+    EXPECT_TRUE(countNearObjectstest(game, centerTile, BuildingType::Forge));
+}
+
+TEST(HasNearObj, Forge_NotNearby_ReturnsFalse) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+
+    auto centerTile = game->getTile(5, 5).lock();
+    auto farTile = game->getTile(8, 8).lock();
+    farTile->buildings.push_back(std::make_unique<ForgeBuilding>());
+
+    EXPECT_FALSE(countNearObjectstest(game, centerTile, BuildingType::Forge));
+}
+
+TEST(HasNearObj, NoBuildings_ReturnsFalse) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+
+    auto centerTile = game->getTile(5, 5).lock();
+
+    EXPECT_FALSE(countNearObjectstest(game, centerTile, BuildingType::Forge));
+}
+
+TEST(City, Constructor_InitializesMainTile) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+
+    auto tile = game->getTile(5, 5).lock();
+    auto city = std::make_shared<City>(tile, game->tileMap);
+
+    EXPECT_EQ(city->mainTile.lock(), tile);
+}
+
+TEST(City, Constructor_StoresMapReference) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+
+    auto tile = game->getTile(5, 5).lock();
+    auto city = std::make_shared<City>(tile, game->tileMap);
+
+    EXPECT_EQ(city->gameMap.lock(), game->tileMap);
+}
+
+TEST(Tile, SpecialEmplaceUnit_EmptyTile_PlacesUnit) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
+
+    auto tile = game->getTile(5, 5).lock();
+    auto unit = std::make_shared<Warrior>(0, 5, 5);
+    game->tribes[0]->units.push_back(unit);
+
+    tile->specialEmplaceUnit(game, unit);
+
+    EXPECT_EQ(tile->unit.lock(), unit);
+}
+
+TEST(Tile, SpecialEmplaceUnit_OccupiedTile_MovesOldUnit) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
+
+    auto tile = game->getTile(5, 5).lock();
+    auto oldUnit = std::make_shared<Warrior>(0, 5, 5);
+    tile->unit = oldUnit;
+    game->tribes[0]->units.push_back(oldUnit);
+
+    auto newUnit = std::make_shared<Warrior>(0, 5, 5);
+    game->tribes[0]->units.push_back(newUnit);
+
+    tile->specialEmplaceUnit(game, newUnit);
+
+    EXPECT_EQ(tile->unit.lock(), newUnit);
+}
+
+TEST(Integration, PopulationImprovement_TriggeredByResource) {
+    auto game = std::make_shared<Game>();
+    game->tileMap->tileMap = testMapCreation(10);
+    auto tribe = std::make_shared<Tribe>(0, NationType::Farmers);
+
+    game->tribes.push_back(tribe);
+    auto centerTile = game->getTile(5, 5).lock();
+    auto city = std::make_shared<City>(centerTile, game->tileMap);
+    city->tribeId = 0;
+    centerTile->ownedBy = city;
+    tribe->addCity(city);
+
+    auto mining = std::make_unique<MiningBuilding>();
+    auto miningTile = game->getTile(6, 5).lock();
+    miningTile->type = TerrainTypes::Mountain;
+    miningTile->ownerTribeId = 0;
+    miningTile->ownedBy = city;
+    miningTile->buildings.push_back(std::move(mining));
+
+    auto forge = std::make_unique<ForgeBuilding>();
+    auto forgeTile = game->getTile(6, 6).lock();
+    forgeTile->ownerTribeId = 0;
+    forgeTile->ownedBy = city;
+    forgeTile->build(game, std::move(forge));
+
+    ASSERT_EQ(game->tribes[0]->tribeId, 0);
+    ASSERT_EQ(game->tribes[0]->cities[0].lock()->tribeId, 0);
+    std::cout << game->tribes[0]->cities[0].lock()->currentPopulation << game->tribes[0]->cities[0].lock()->size;
 }

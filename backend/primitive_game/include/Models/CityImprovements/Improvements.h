@@ -13,7 +13,7 @@ public:
     explicit EconomicalImprovement(int count) :
         bonus(count)
     {}
-    int apply(std::weak_ptr<City> improving) override;
+    int apply(std::weak_ptr<Game> game, std::weak_ptr<City> improving) override;
 };
 
 class DefenceImprovement : BasicImprovement {
@@ -22,12 +22,12 @@ public:
     explicit DefenceImprovement(int count) :
             bonus(count)
     {}
-    int apply(std::weak_ptr<City> improving) override;
+    int apply(std::weak_ptr<Game> game,std::weak_ptr<City> improving) override;
 };
 
 class GiantImprovement : BasicImprovement {
 public:
-    int apply(std::weak_ptr<City> improving) override;
+    int apply(std::weak_ptr<Game> game, std::weak_ptr<City> improving) override;
 };
 
 class CoinsImprovement : BasicImprovement {
@@ -36,10 +36,10 @@ public:
     explicit CoinsImprovement(int count):
         bonus(count)
     {}
-    int apply(std::weak_ptr<City> improving) override;
+    int apply(std::weak_ptr<Game> game, std::weak_ptr<City> improving) override;
 };
 
 class BorderImprovement : BasicImprovement {
 public:
-    int apply(std::weak_ptr<City> improving) override;
+    int apply(std::weak_ptr<Game> game, std::weak_ptr<City> improving) override;
 };

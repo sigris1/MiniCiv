@@ -6,20 +6,21 @@
 
 #include "vector"
 #include "map"
-#include "../City/City.h"
-#include "../Buildings/BasicBuilding.h"
-#include "../Buildings/BuildingType.h"
-#include "../Units/BasicUnits.h"
-#include "../Units/UnitType.h"
-#include "../Resource/ResourceType.h"
-#include "../Achivemets/BasicAchive.h"
-#include "../Achivemets/AchiveType.h"
-#include "../Terrains/TerrainTypes.h"
+#include "Models/City/City.h"
+#include "Models/Buildings/BasicBuilding.h"
+#include "Models/Buildings/BuildingType.h"
+#include "Models/Units/BasicUnits.h"
+#include "Models/Units/UnitType.h"
+#include "Models/Resource/ResourceType.h"
+#include "Models/Achivemets/BasicAchive.h"
+#include "Models/Achivemets/AchiveType.h"
+#include "Models/Terrains/TerrainTypes.h"
 #include "NationType.h"
-#include "../Tile/Tile.h"
+#include "Models/Tile/Tile.h"
 #include "TribeAbilitiesTypes.h"
 
 class BasicTech;
+class Game;
 
 class Tribe{
 public:
@@ -42,11 +43,13 @@ public:
     void loseCity(const std::weak_ptr<City>& city);
     void learnTech(const std::weak_ptr<BasicTech>& tech);
     void produceIncome();
-    void build(const std::weak_ptr<Tile>& tile, BuildingType buildingType);
-    void moveUnit(const std::weak_ptr<Tile>& from, const std::weak_ptr<Tile>& to);
+    void checkCities();
+    void build(std::weak_ptr<Game> game, const std::weak_ptr<Tile>& tile, BuildingType buildingType);
+    void moveUnit(std::weak_ptr<Game> game, const std::shared_ptr<BasicUnit>& unit, const std::weak_ptr<Tile>& to);
     void recruitUnit(const std::weak_ptr<City>&, UnitType unitType);
-    void collectResource(const std::weak_ptr<Tile>& tile, ResourceType resourceType);
+    void collectResource(std::weak_ptr<Game> game, const std::weak_ptr<Tile>& tile, ResourceType resourceType);
     int revealTechCost(std::weak_ptr<BasicTech> tech);
+    void endTurn();
 private:
     void applyTech(const std::shared_ptr<BasicTech>& tech);
 };

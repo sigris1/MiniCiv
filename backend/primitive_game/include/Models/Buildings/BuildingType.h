@@ -15,5 +15,15 @@ enum class BuildingType {
     WaterTemple,
     MountainTemple,
     ForestTemple,
-    Port
+    Port,
+    ForestHouse,
+    Mining,
+    Farming,
+    TowerOfWisdom,
+    AltarOfPeace,
+    ImperialTomb,
+    EyeOfGod,
+    FortunePark,
+    KillerGates,
+    GreatBazaar
 };

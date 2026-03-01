@@ -4,11 +4,17 @@
 
 #include "Models/Tile/Tile.h"
 #include "stdexcept"
+#include "EngineElements/TypeMatcher.h"
+#include "Models/Game/Game.h"
+#include "Models/Buildings/SpriteBuilding.h"
+#include "EngineElements/UnitsMover.h"
 
-void Tile::build(std::shared_ptr<BasicBuilding> newBuilding) {
-    //TODO добавить метчер ресурстайп -> ресур с, а потом если всё ок, то удалить ресурс с клетки, так же обработат постройку справйтБилдинг, если оно нужно
-    //TODO докинуть население городу, к которому относиться тайл, считая, что возможность сбор ресурсов мы провалидировали ранее
-    //TODO но только аналогичная шутка со зданиями, а не ресурсами
+void Tile::build(std::weak_ptr<Game> game, std::unique_ptr<BasicBuilding> newBuilding) {
+    auto curGame = game.lock();
+    buildings.emplace_back(std::move(newBuilding));
+    auto ownedCity = ownedBy.lock();
+    ownedCity->getIncome();
+    curGame->getTribe(ownerTribeId)->checkCities();
 }
 
 int Tile::collectIncome() {
@@ -21,13 +27,44 @@ int Tile::collectIncome() {
     return income;
 }
 
-void Tile::collectResource(ResourceType type) {
-    //TODO добавить метчер ресурстайп -> ресур с, а потом если всё ок, то удалить ресурс с клетки, так же обработат постройку справйтБилдинг, если оно нужно
-    //TODO докинуть население городу, к которому относиться тайл, считая, что возможность сбор ресурсов мы провалидировали ранее
+void Tile::tryToBuildSprite(ResourceType resType) {
+    switch (resType) {
+        case ResourceType::Forest:
+            buildings.emplace_back(std::make_unique<BasicBuilding>(ForestBuilding()));
+            break;
+        case ResourceType::Mining:
+            buildings.emplace_back(std::make_unique<BasicBuilding>(MiningBuilding()));
+            break;
+        case ResourceType::Farm:
+            buildings.emplace_back(std::make_unique<BasicBuilding>(FarmingBuilding()));
+            break;
+        default:
+            break;
+    }
+}
+
+void Tile::collectResource(std::weak_ptr<Game> game, ResourceType resType) {
+    if (ownedBy.expired()){
+        throw  std::logic_error("Resource is non owned");
+    }
+    for (auto it = resources.begin(); it != resources.end(); ++it) {
+        if ((*it)->getType() == resType) {
+            if (auto curCity = this->ownedBy.lock()) {
+               curCity->addPopulation((*it)->value);
+               tryToBuildSprite(resType);
+            }
+            resources.erase(it);
+            return;
+        }
+    }
+
+    throw std::logic_error("Resource not found on tile");
 }
 
 void Tile::emplaceUnit(std::shared_ptr<BasicUnit> newUnit) {
     if (!unit.expired()){
+        newUnit->x = this->x;
+        newUnit->y = this->y;
         unit = newUnit;
     } else {
         throw std::logic_error("There's already one unit in the tile");
@@ -42,11 +79,22 @@ Tile::Tile(int X, int Y, TerrainTypes type) :
     defenceModifier = getDefenceModifier(type);
 }
 
-void Tile::specialEmplaceUnit(std::shared_ptr<BasicUnit> newUnit) {
-    if (!unit.expired()){
+void Tile::specialEmplaceUnit(std::weak_ptr<Game> game, std::shared_ptr<BasicUnit> newUnit) {
+    if (unit.expired()){
         unit = newUnit;
     } else {
-      //TODO Добавить вынужденное перемещение юнита, который сейчас в городе в одну из соседних клеток, когда сделаю movementManager
+        auto availableTile = UnitMover::GetAvailableTiles(game, unit.lock()).first;
+        if (availableTile.empty()){
+            auto tribe = game.lock()->getTribe(unit.lock()->tribeId);
+            tribe->units.erase(
+                    std::remove(tribe->units.begin(), tribe->units.end(), unit.lock()),
+                    tribe->units.end()
+            );
+            this->unit = newUnit;
+        } else {
+            UnitMover::MoveUnit(game, unit.lock(), availableTile[0]);
+            this->unit = newUnit;
+        }
     }
 }
 

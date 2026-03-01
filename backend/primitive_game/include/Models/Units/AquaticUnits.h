@@ -11,7 +11,7 @@ public:
 
     Boat(std::shared_ptr<BasicUnit> pas, int X, int Y):
         passenger(std::move(pas)),
-        BasicUnit(X, Y, pas->tribeId, pas->health, 0, 1, 2, 2, UnitMovementType::Aquatic, UnitAttackType::Peaceful)
+        BasicUnit(X, Y, pas->tribeId, 0, pas->health, 0, 1, 2, 2, UnitMovementType::Aquatic, UnitAttackType::Peaceful)
     {}
     double getHealthPercentage() override{
         return passenger->getHealthPercentage();
@@ -32,7 +32,7 @@ public:
 
     Scout(std::shared_ptr<BasicUnit> pas, int X, int Y):
             passenger(std::move(pas)),
-            BasicUnit(X, Y, pas->tribeId, pas->health, 2, 1, 3, 2, UnitMovementType::Aquatic, UnitAttackType::Ranged)
+            BasicUnit(X, Y, pas->tribeId, 5, pas->health, 2, 1, 3, 2, UnitMovementType::Aquatic, UnitAttackType::Ranged)
     {}
     double getHealthPercentage() override{
         return passenger->getHealthPercentage();
@@ -53,7 +53,7 @@ public:
 
     Ram(std::shared_ptr<BasicUnit> pas, int X, int Y):
             passenger(std::move(pas)),
-            BasicUnit(X, Y, pas->tribeId, pas->health, 3, 3, 3, 1, UnitMovementType::Aquatic, UnitAttackType::Melee)
+            BasicUnit(X, Y, pas->tribeId, 5, pas->health, 3, 3, 3, 1, UnitMovementType::Aquatic, UnitAttackType::Melee)
     {}
     double getHealthPercentage() override{
         return passenger->getHealthPercentage();
@@ -74,7 +74,7 @@ public:
 
     Squadron(std::shared_ptr<BasicUnit> pas, int X, int Y):
         passenger(std::move(pas)),
-        BasicUnit(X, Y, pas->tribeId, pas->health, 3, 2, 2, 3, UnitMovementType::Aquatic, UnitAttackType::Splash)
+        BasicUnit(X, Y, pas->tribeId, 15, pas->health, 3, 2, 2, 3, UnitMovementType::Aquatic, UnitAttackType::Splash)
     {}
     double getHealthPercentage() override{
         return passenger->getHealthPercentage();
@@ -95,7 +95,7 @@ public:
 
     Rampager(std::shared_ptr<BasicUnit> pas, int X, int Y):
             passenger(std::move(pas)),
-            BasicUnit(X, Y, pas->tribeId, pas->health, 4, 4, 2, 1, UnitMovementType::Aquatic, UnitAttackType::Melee)
+            BasicUnit(X, Y, pas->tribeId, 0, pas->health, 4, 4, 2, 1, UnitMovementType::Aquatic, UnitAttackType::Melee)
     {}
     double getHealthPercentage() override{
         return passenger->getHealthPercentage();

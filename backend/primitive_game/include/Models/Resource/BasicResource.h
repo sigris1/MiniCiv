@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "ResourceType.h"
 
 class BasicResource{
 public:
@@ -12,4 +13,7 @@ public:
         cost(starsCost),
         value(populationValue)
     {}
+    virtual ResourceType getType(){
+        return ResourceType::None;
+    };
 };

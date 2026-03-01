@@ -5,12 +5,15 @@
 
 #include "BasicBuilding.h"
 
+
 class ForgeBuilding : public PopulationBuilding {
 public:
     ForgeBuilding() : PopulationBuilding(5, TerrainTypes::Field, true, 0) {
         type = BuildingType::Forge;
     }
     void RecalculateSize(int newSize) override;
+
+    int CalculateEffectiveSize(std::shared_ptr<Map> map, int x, int y) const override;
 };
 
 class MillBuilding : public PopulationBuilding {
@@ -19,6 +22,8 @@ public:
         type = BuildingType::Mill;
     }
     void RecalculateSize(int newSize) override;
+
+    int CalculateEffectiveSize(std::shared_ptr<Map> map, int x, int y) const override;
 };
 
 class LumberHatBuilding : public PopulationBuilding {
@@ -27,6 +32,8 @@ public:
         type = BuildingType::LumberHat;
     }
     void RecalculateSize(int newSize) override;
+
+    int CalculateEffectiveSize(std::shared_ptr<Map> map, int x, int y) const override;
 };
 
 class TempleBuilding : public PopulationBuilding {
@@ -35,6 +42,8 @@ public:
         type = BuildingType::Temple;
     }
     void RecalculateSize(int newSize) override;
+
+    int CalculateEffectiveSize(std::shared_ptr<Map>, int, int) const override;
 };
 
 class WaterTempleBuilding : public PopulationBuilding {
@@ -43,6 +52,8 @@ public:
         type = BuildingType::WaterTemple;
     }
     void RecalculateSize(int newSize) override;
+
+    int CalculateEffectiveSize(std::shared_ptr<Map>, int, int) const override;
 };
 
 class MountainTempleBuilding : public PopulationBuilding {
@@ -51,6 +62,8 @@ public:
         type = BuildingType::MountainTemple;
     }
     void RecalculateSize(int newSize) override;
+
+    int CalculateEffectiveSize(std::shared_ptr<Map>, int, int) const override;
 };
 
 class ForestTempleBuilding : public PopulationBuilding {
@@ -59,6 +72,8 @@ public:
         type = BuildingType::ForestTemple;
     }
     void RecalculateSize(int newSize) override;
+
+    int CalculateEffectiveSize(std::shared_ptr<Map>, int, int) const override;
 };
 
 class Port : public PopulationBuilding {
@@ -67,4 +82,6 @@ public:
         type = BuildingType::Port;
     }
     void RecalculateSize(int newSize) override;
+
+    int CalculateEffectiveSize(std::shared_ptr<Map>, int, int) const override;
 };

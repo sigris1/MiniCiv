@@ -28,7 +28,9 @@ public:
                 return;
             } else {
                 auto oldTile = gamePtr->getTile(unit->x, unit->y).lock();
-                if (oldTile) oldTile->unit.reset();
+                if (oldTile) {
+                    oldTile->unit.reset();
+                }
                 tile->unit = unit;
                 unit->x = tile->x;
                 unit->y = tile->y;

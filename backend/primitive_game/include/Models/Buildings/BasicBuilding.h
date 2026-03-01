@@ -6,8 +6,10 @@
 #include "../Terrains/Terrains.h"
 #include "../Terrains/TerrainTypes.h"
 #include "stdexcept"
-#include "AchiveBuildingsTypes.h"
 #include "BuildingType.h"
+#include "memory"
+
+class Map;
 
 class BasicBuilding {
 public:
@@ -32,6 +34,9 @@ public:
             population(Population)
     {}
     virtual void RecalculateSize(int newSize) = 0;
+    virtual int CalculateEffectiveSize(std::shared_ptr<Map> map, int x, int y) const {
+        return size;
+    }
 };
 
 class EconomicalBuilding : public BasicBuilding {
@@ -47,8 +52,8 @@ public:
 class AchivementBuilding : public BasicBuilding {
 public:
     int population = 3;
-    AchiveBuildingsTypes type;
-    AchivementBuilding(TerrainTypes terrain, AchiveBuildingsTypes currentType)
+    BuildingType type;
+    AchivementBuilding(TerrainTypes terrain, BuildingType currentType)
             : BasicBuilding(0, terrain, false),
             type(currentType)
     {
@@ -56,8 +61,6 @@ public:
             throw std::invalid_argument("Terrain not allowed");
         }
     }
-
-private:
     static bool isCorrectTerrain(TerrainTypes t) {
         return t == TerrainTypes::Water ||
                t == TerrainTypes::Forest ||

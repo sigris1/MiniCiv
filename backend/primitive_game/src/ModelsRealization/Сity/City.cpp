@@ -7,7 +7,41 @@
 #include "thread"
 #include "future"
 #include "memory"
-#include "iostream"
+#include "Models/Game/Game.h"
+
+City::City(std::shared_ptr<Tile> tile, std::shared_ptr<Map> map):
+        mainTile(tile),
+        gameMap(map)
+        {}
+
+void City::getStartTerritory(){
+    auto tile = mainTile.lock();
+    auto map = gameMap.lock();
+
+    int startX = tile->x;
+    int startY = tile->y;
+
+    int size = map->tileMap.size();
+
+    for (int x = -1; x < 2; ++x) {
+        for (int y = -1; y < 2; ++y) {
+            if (x == 0 and y == 0){
+                continue;
+            }
+            int tileX = startX + x;
+            int tileY = startY + y;
+
+            if (tileX >= 0 && tileX < size &&
+                tileY >= 0 && tileY < size) {
+
+                auto targetTile = map->getTile(tileX, tileY).lock();
+                if (targetTile && targetTile->ownedBy.expired()) {
+                    targetTile->ownedBy = shared_from_this();
+                }
+            }
+        }
+    }
+}
 
 int City::produceCoins(){
     getIncome();
@@ -19,23 +53,72 @@ void City::recruitUnit(std::unique_ptr<BasicUnit> unit) {
     tilePtr->emplaceUnit(std::move(unit));
 }
 
-void City::improveCity(std::unique_ptr<BasicImprovement> inv){
-    basicEconomic++;
-    inv->apply(shared_from_this());
+void City::improveCity(std::weak_ptr<Game> game, std::unique_ptr<BasicImprovement> inv){
+    inv->apply(game, shared_from_this());
 };
 
-void City::addPopulation(int amount){
+bool City::addPopulation(int amount){
     if (currentPopulation + amount >= size){
         currentPopulation = (currentPopulation + amount) % (size + 1);
-//TODO   дофиксить вот тут, с ожидаением улучшения с фронта, чтобы аплайнуть корректное улучшение     improveCity();
+        size++;
+        basicEconomic++;
+        return true;
     } else {
         currentPopulation += amount;
     }
+    return false;
 };
 
 bool City::canRecruitUnit() const{
     return unitCount < size;
 };
+
+void City::RecalculatePopulation() {
+    auto mapPtr = gameMap.lock();
+    auto tilePtr = mainTile.lock();
+
+    if (!mapPtr || !tilePtr) {
+        return;
+    }
+
+    int radius = 1 + (advancedTerritory ? 1 : 0);
+    int cx = tilePtr->x;
+    int cy = tilePtr->y;
+
+    int mapHeight = mapPtr->tileMap.size();
+    int mapWidth = mapPtr->tileMap[0].size();
+
+    int oldTotalPop = currentPopulation;
+    int newTotalPop = 0;
+
+    for (int dx = -radius; dx <= radius; ++dx) {
+        for (int dy = -radius; dy <= radius; ++dy) {
+            int tileX = cx + dx;
+            int tileY = cy + dy;
+
+            if (tileX < 0 || tileX >= mapWidth || tileY < 0 || tileY >= mapHeight) {
+                continue;
+            }
+
+            auto tile = mapPtr->getTile(tileX, tileY).lock();
+            if (!tile || tile->ownerTribeId != tribeId) {
+                continue;
+            }
+
+            for (const auto& b : tile->buildings) {
+                if (auto popBuilding = dynamic_cast<PopulationBuilding*>(b.get())) {
+                    int oldBuildingPop = popBuilding->population;
+                    int newSize = popBuilding->CalculateEffectiveSize(mapPtr, tileX, tileY);
+                    popBuilding->RecalculateSize(newSize);
+                    newTotalPop += popBuilding->population;
+                }
+            }
+        }
+    }
+
+    int delta = newTotalPop - oldTotalPop;
+    addPopulation(delta);
+}
 
 void City::getIncome() {
     auto mapPtr = gameMap.lock();
@@ -139,6 +222,6 @@ int City::captureCity(int newTribeId) {
     tribeId = newTribeId;
 
     getIncome();
-
+    getStartTerritory();
     return tribeId;
 }

@@ -3,15 +3,14 @@
 //
 
 #pragma once
-
-#include "../Buildings/AchiveBuildingsTypes.h"
+#include "Models/Buildings/BuildingType.h"
 
 class BasicAchive {
 public:
     int limit;
-    AchiveBuildingsTypes achiveBuildingsTypes;
-    BasicAchive(int achiveLimit, AchiveBuildingsTypes achiveBuildingsTypes1) :
+    BuildingType achiveBuildingsTypes;
+    BasicAchive(int achiveLimit, BuildingType achiveBuildingsType) :
         limit(achiveLimit),
-        achiveBuildingsTypes(achiveBuildingsTypes1)
+        achiveBuildingsTypes(achiveBuildingsType)
     {}
 };
