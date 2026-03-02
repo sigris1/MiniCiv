@@ -18,9 +18,11 @@
 #include "NationType.h"
 #include "Models/Tile/Tile.h"
 #include "TribeAbilitiesTypes.h"
+#include "EngineElements/TreeCreator.h"
 
 class BasicTech;
 class Game;
+
 
 class Tribe{
 public:
@@ -34,7 +36,8 @@ public:
     std::vector<ResourceType> availableResorces;
     std::vector<AchiveType> availableAchivs;
     std::vector<AbilitiesType> tribeAbilities;
-    std::map<BasicAchive, int> progress;
+    std::map<std::unique_ptr<BasicAchive>, int> progress;
+    TechTree tree;
     std::atomic<int> balance = 0;
     int tribeId;
     NationType type;
@@ -50,6 +53,7 @@ public:
     void collectResource(std::weak_ptr<Game> game, const std::weak_ptr<Tile>& tile, ResourceType resourceType);
     int revealTechCost(std::weak_ptr<BasicTech> tech);
     void endTurn();
+    std::vector<std::unique_ptr<AchivementBuilding>> getAchiveBuildings();
 private:
     void applyTech(const std::shared_ptr<BasicTech>& tech);
 };

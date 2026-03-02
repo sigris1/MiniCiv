@@ -92,3 +92,45 @@ DefenceType TypeMatcher::getDefenceTypeByTerrainType(TerrainTypes type) {
             return DefenceType::None;
     }
 }
+
+std::unique_ptr<BasicAchive> TypeMatcher::getAchiveByAchiveType(AchiveType type){
+    switch (type) {
+        case AchiveType::Killer:
+            return std::make_unique<KillerAchive>();
+        case AchiveType::Trader:
+            return std::make_unique<TraderAchive>();
+        case AchiveType::Explorer:
+            return std::make_unique<ExplorerAchive>();
+        case AchiveType::Peace:
+            return std::make_unique<PeaceAchive>();
+        case AchiveType::Improve:
+            return std::make_unique<ImproverAchive>();
+        case AchiveType::Economic:
+            return std::make_unique<EconomicAchive>();
+        case AchiveType::Wisdom:
+            return std::make_unique<WisdomAchive>();
+        default:
+            throw std::logic_error("There isn't achive with that type");
+    }
+}
+
+std::unique_ptr<AchivementBuilding> TypeMatcher::getAchiveBuildingByAchiveBuilding(BuildingType type) {
+    switch (type) {
+        case BuildingType::KillerGates:
+            return std::make_unique<AchivementBuilding>(TerrainTypes::Field, BuildingType::KillerGates);
+        case BuildingType::GreatBazaar:
+            return std::make_unique<AchivementBuilding>(TerrainTypes::Field, BuildingType::GreatBazaar);
+        case BuildingType::EyeOfGod:
+            return std::make_unique<AchivementBuilding>(TerrainTypes::Field, BuildingType::EyeOfGod);
+        case BuildingType::AltarOfPeace:
+            return std::make_unique<AchivementBuilding>(TerrainTypes::Field, BuildingType::AltarOfPeace);
+        case BuildingType::FortunePark:
+            return std::make_unique<AchivementBuilding>(TerrainTypes::Field, BuildingType::FortunePark);
+        case BuildingType::ImperialTomb:
+            return std::make_unique<AchivementBuilding>(TerrainTypes::Field, BuildingType::ImperialTomb);
+        case BuildingType::TowerOfWisdom:
+            return std::make_unique<AchivementBuilding>(TerrainTypes::Field, BuildingType::TowerOfWisdom);
+        default:
+            throw std::logic_error("There isn't achive with that type");
+    }
+}

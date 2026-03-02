@@ -54,6 +54,13 @@ void City::recruitUnit(std::unique_ptr<BasicUnit> unit) {
 }
 
 void City::improveCity(std::weak_ptr<Game> game, std::unique_ptr<BasicImprovement> inv){
+    auto curGame = game.lock();
+    auto tribe = curGame->getTribe(tribeId);
+    for (auto& a : tribe->progress){
+        if (a.first->achiveBuildingsTypes == BuildingType::FortunePark){
+            a.second = std::max(a.second, size);
+        }
+    }
     inv->apply(game, shared_from_this());
 };
 

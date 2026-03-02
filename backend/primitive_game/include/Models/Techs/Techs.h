@@ -406,7 +406,7 @@ public:
     {}
 };
 
-BasicTech* startTechMatcher(NationType type){
+inline BasicTech* startTechMatcher(NationType type){
     BasicTech* tech = nullptr;
     switch (type) {
         case NationType::Climbers:

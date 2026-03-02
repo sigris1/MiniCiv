@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include "thread"
 #include "future"
+#include "vector"
 #include "EngineElements/UnitsMover.h"
 #include "EngineElements/TypeMatcher.h"
 #include "Models/Game/Game.h"
@@ -63,6 +64,11 @@ void Tribe::learnTech(const std::weak_ptr<BasicTech>& tech) {
     }
     balance -= t->basicCost + t->rangedLevel * cities.size();
     knownTechs.push_back(t);
+    for (auto& a : progress){
+        if (a.first->achiveBuildingsTypes == BuildingType::TowerOfWisdom){
+            a.second = knownTechs.size();
+        }
+    }
     applyTech(t);
 }
 
@@ -299,6 +305,7 @@ void Tribe::applyTech(const std::shared_ptr<BasicTech> &tech) {
     }
     if (tech->newAchive != AchiveType::None) {
         availableAchivs.push_back(tech->newAchive);
+        progress[TypeMatcher::getAchiveByAchiveType(tech->newAchive)] = 0;
     }
     if (tech->newUnit != UnitType::None) {
         availableUnits.push_back(tech->newUnit);
@@ -306,7 +313,7 @@ void Tribe::applyTech(const std::shared_ptr<BasicTech> &tech) {
     if (tech->newDefence != DefenceType::None) {
         availableDefences.push_back(tech->newDefence);
     }
-    for (auto i : tech->newBuild){
+    for (auto i : tech->newBuild) {
         availableBuildings.push_back(i);
     }
 }
@@ -316,6 +323,7 @@ Tribe::Tribe(int id, NationType tribeType) :
     type(tribeType)
 {
     learnTech(std::make_shared<BasicTech>(*startTechMatcher(tribeType)));
+    tree.create();
 }
 
 int Tribe::revealTechCost(std::weak_ptr<BasicTech> tech){
@@ -354,4 +362,24 @@ void Tribe::checkCities() {
 void Tribe::endTurn() {
     checkCities();
     produceIncome();
+    for (auto& a : progress){
+        if (a.first->achiveBuildingsTypes == BuildingType::ImperialTomb){
+            a.second = balance;
+        }
+    }
+}
+
+std::vector<std::unique_ptr<AchivementBuilding>> Tribe::getAchiveBuildings() {
+    std::vector<std::unique_ptr<AchivementBuilding>> available;
+
+    for (auto it = progress.begin(); it != progress.end(); ) {
+        if (it->second >= it->first->limit) {
+            available.push_back(std::move(TypeMatcher::getAchiveBuildingByAchiveBuilding(it->first->achiveBuildingsTypes)));
+            it = progress.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    return available;
 }

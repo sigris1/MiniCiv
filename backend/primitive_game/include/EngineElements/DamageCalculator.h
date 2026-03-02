@@ -22,6 +22,11 @@ public:
             auto newTribe = game.lock()->getTribe(attacker->tribeId);
             defender->tribeId = newTribe->tribeId;
             newTribe->units.emplace_back(defender);
+            for (auto& a : tribe->progress){
+                if (a.first->achiveBuildingsTypes == BuildingType::AltarOfPeace){
+                    a.second++;
+                }
+            }
             return false;
         }
         bool needBackdraft = doAttack(game, attacker, defender);
@@ -43,6 +48,11 @@ private:
                     tribe->units.end()
             );
             game.lock()->getTile(defender->x, defender->y).lock()->unit.reset();
+            for (auto& a : tribe->progress){
+                if (a.first->achiveBuildingsTypes == BuildingType::KillerGates){
+                    a.second++;
+                }
+            }
         }
         return isLife;
     }
@@ -57,6 +67,11 @@ private:
                     tribe->units.end()
             );
             game.lock()->getTile(attacker->x, attacker->y).lock()->unit.reset();
+            for (auto& a : tribe->progress){
+                if (a.first->achiveBuildingsTypes == BuildingType::KillerGates){
+                    a.second++;
+                }
+            }
         }
     }
     static int calculateDamage(std::weak_ptr<Game> game, std::shared_ptr<BasicUnit> attacker, std::shared_ptr<BasicUnit> defender){

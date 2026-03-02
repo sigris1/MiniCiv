@@ -13,6 +13,7 @@
 #include "../include/Models/Buildings/PopulationBuildings.h"
 #include "../include/EngineElements/TypeMatcher.h"
 #include "../include/EngineElements/DamageCalculator.h"
+#include "../include/EngineElements/TreeCreator.h"
 #include "iostream"
 
 std::vector<std::vector<std::shared_ptr<Tile>>> testMapCreation(int size) {
@@ -1861,5 +1862,9 @@ TEST(Integration, PopulationImprovement_TriggeredByResource) {
 
     ASSERT_EQ(game->tribes[0]->tribeId, 0);
     ASSERT_EQ(game->tribes[0]->cities[0].lock()->tribeId, 0);
-    std::cout << game->tribes[0]->cities[0].lock()->currentPopulation << game->tribes[0]->cities[0].lock()->size;
+}
+
+TEST(Tree, TreeCreation) {
+    TechTree now;
+    now.create();
 }

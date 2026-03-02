@@ -16,7 +16,8 @@
 #include "Models/Units/BasicUnits.h"
 #include "Models/Units/UnitType.h"
 #include "Models/Terrains/TerrainTypes.h"
-
+#include "Models/Achivemets/Achive.h"
+#include "Models/Achivemets/AchiveType.h"
 
 class TypeMatcher{
 public:
@@ -24,4 +25,6 @@ public:
     static std::unique_ptr<BasicBuilding> getBuildByBuildingType(BuildingType type);
     static std::unique_ptr<BasicUnit> getUnitByUnitType(UnitType type, int unitTribe);
     static DefenceType getDefenceTypeByTerrainType(TerrainTypes type);
+    static std::unique_ptr<BasicAchive> getAchiveByAchiveType(AchiveType type);
+    static std::unique_ptr<AchivementBuilding> getAchiveBuildingByAchiveBuilding(BuildingType type);
 };
