@@ -6,14 +6,15 @@
 
 #include "memory"
 #include "vector"
-#include "../Units/BasicUnits.h"
-#include "../Resource/BasicResource.h"
-#include "../Resource/ResourceType.h"
-#include "../Terrains/TerrainTypes.h"
-#include "../Buildings/BasicBuilding.h"
-#include "../City/City.h"
+#include "Models/Units/BasicUnits.h"
+#include "Models/Resource/BasicResource.h"
+#include "Models/Resource/ResourceType.h"
+#include "Models/Terrains/TerrainTypes.h"
+#include "Models/Buildings/BasicBuilding.h"
+#include "Models/City/City.h"
 
 class Game;
+class City;
 
 class Tile : public std::enable_shared_from_this<Tile> {
 public:

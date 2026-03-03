@@ -5,12 +5,13 @@
 #pragma once
 
 #include "memory"
-#include "../Map/Map.h"
-#include "../Units/BasicUnits.h"
-#include "../CityImprovements/BasicImprovement.h"
+#include "Models/Map/Map.h"
+#include "Models/Units/BasicUnits.h"
+#include "Models/CityImprovements/BasicImprovement.h"
 #include "Models/Resource/BasicResource.h"
 
 class Game;
+class Tile;
 
 class City : public std::enable_shared_from_this<City> {
 public:

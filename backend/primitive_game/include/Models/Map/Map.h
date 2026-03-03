@@ -4,15 +4,17 @@
 #pragma once
 
 #include "vector"
+#include "Models/Tile/Tile.h"
 
-class Tile;
 class City;
+class Tile;
 
-class Map {
+class Map : public std::enable_shared_from_this<Map> {
 public:
-    Map();
+    int size;
+    Map(int mapSize);
     std::vector<std::vector<std::shared_ptr<Tile>>> tileMap;
-    std::vector<std::vector<std::shared_ptr<City>>> cities;
+    std::vector<std::shared_ptr<City>> cities;
     void generateMap();
     std::weak_ptr<Tile> getTile(int x, int y);
 };

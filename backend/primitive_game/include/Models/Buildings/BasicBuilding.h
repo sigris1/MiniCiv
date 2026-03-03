@@ -3,8 +3,8 @@
 //
 #pragma once
 
-#include "../Terrains/Terrains.h"
-#include "../Terrains/TerrainTypes.h"
+#include "Models/Terrains/Terrains.h"
+#include "Models/Terrains/TerrainTypes.h"
 #include "stdexcept"
 #include "BuildingType.h"
 #include "memory"

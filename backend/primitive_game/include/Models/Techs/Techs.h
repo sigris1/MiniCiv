@@ -4,7 +4,7 @@
 #pragma once
 
 #include "BasicTech.h"
-#include "../Tribe/NationType.h"
+#include "Models/Tribe/NationType.h"
 
 class OrganizationTech : public BasicTech {
 public:

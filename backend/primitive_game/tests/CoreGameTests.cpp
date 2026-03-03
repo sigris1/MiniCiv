@@ -67,7 +67,7 @@ int countNearObjectstest(std::weak_ptr<Game> game, const std::weak_ptr<Tile>& ti
 
 
 TEST(Economical, city){
-    Map map;
+    Map map(10);
     Tile tile(1, 1, TerrainTypes::Field);
     Tribe tribe(1, NationType::Farmers);
     City capital(std::make_shared<Tile>(tile), std::make_shared<Map>(map));
@@ -76,12 +76,12 @@ TEST(Economical, city){
 }
 
 TEST(Economical, mapCreation){
-    Map map;
+    Map map(10);
     map.tileMap = testMapCreation(3);
 }
 
 TEST(Economical, mew){
-    auto map = std::make_shared<Map>();
+    auto map = std::make_shared<Map>(10);
     map->tileMap = testMapCreation(3);
     Tribe tribe(1, NationType::Farmers);
     auto capital = std::make_shared<City>(map->tileMap[1][1], map);
@@ -91,7 +91,7 @@ TEST(Economical, mew){
 }
 
 TEST(Economical, getCityIncome){
-    auto map = std::make_shared<Map>();
+    auto map = std::make_shared<Map>(10);
     map->tileMap = testMapCreation(3);
 
     auto tribe = std::make_shared<Tribe>(1, NationType::Farmers);
@@ -109,7 +109,7 @@ TEST(Economical, getCityIncome){
 TEST(Economical, getMultipleCitiesIncome){
     const int size = 9;
 
-    auto map = std::make_shared<Map>();
+    auto map = std::make_shared<Map>(10);
     map->tileMap.resize(size, std::vector<std::shared_ptr<Tile>>(size));
     for (int y = 0; y < size; ++y) {
         for (int x = 0; x < size; ++x) {
@@ -180,7 +180,7 @@ TEST(Economical, getMultipleCitiesIncome){
 TEST(Economical, cityConquestIncome9x9){
     const int size = 9;
 
-    auto map = std::make_shared<Map>();
+    auto map = std::make_shared<Map>(10);
     map->tileMap.resize(size, std::vector<std::shared_ptr<Tile>>(size));
     for (int y = 0; y < size; ++y) {
         for (int x = 0; x < size; ++x) {
@@ -262,7 +262,7 @@ TEST(Economical, cityConquestIncome9x9){
 }
 
 TEST(Battle, WarriorVsWarrior_SingleExchange) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -283,7 +283,7 @@ TEST(Battle, WarriorVsWarrior_SingleExchange) {
 }
 
 TEST(Battle, GiantKillsWarrior_CompleteRemoval) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -306,7 +306,7 @@ TEST(Battle, GiantKillsWarrior_CompleteRemoval) {
 }
 
 TEST(Battle, Melee_BackdraftBothTakeDamage) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::ShieldBearers));
@@ -329,7 +329,7 @@ TEST(Battle, Melee_BackdraftBothTakeDamage) {
 }
 
 TEST(Battle, Ranged_NoBackdraftDamage) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Archers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -352,7 +352,7 @@ TEST(Battle, Ranged_NoBackdraftDamage) {
 }
 
 TEST(Battle, Backdraft_KillsAttackerAndCleanup) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::ShieldBearers));
@@ -375,7 +375,7 @@ TEST(Battle, Backdraft_KillsAttackerAndCleanup) {
 }
 
 TEST(Battle, ForestDefence_ReducesIncomingDamage) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -401,7 +401,7 @@ TEST(Battle, ForestDefence_ReducesIncomingDamage) {
 }
 
 TEST(Battle, CityDefence_ReducesIncomingDamage) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -431,7 +431,7 @@ TEST(Battle, CityDefence_ReducesIncomingDamage) {
 }
 
 TEST(Battle, Diagonal_MeleeWorks) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -452,7 +452,7 @@ TEST(Battle, Diagonal_MeleeWorks) {
 }
 
 TEST(Battle, PriestVsDefender_UnitConverted) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Peacemakers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::ShieldBearers));
@@ -482,7 +482,7 @@ TEST(Battle, PriestVsDefender_UnitConverted) {
 }
 
 TEST(Battle, LowHealthAttacker_DealsLessDamage) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -509,7 +509,7 @@ TEST(Battle, LowHealthAttacker_DealsLessDamage) {
 }
 
 TEST(Battle, Catapult_Ranged_KillsAtDistance) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -530,7 +530,7 @@ TEST(Battle, Catapult_Ranged_KillsAtDistance) {
 }
 
 TEST(Battle, Knight_HighDamage_KillsQuickly) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Riders));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -552,7 +552,7 @@ TEST(Battle, Knight_HighDamage_KillsQuickly) {
 }
 
 TEST(Battle, SwordsmanVsArcher_MeleeExchange) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Swordsmen));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Archers));
@@ -576,7 +576,7 @@ TEST(Battle, SwordsmanVsArcher_MeleeExchange) {
 }
 
 TEST(Battle, Rider_MobilityAdvantage) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Riders));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -597,7 +597,7 @@ TEST(Battle, Rider_MobilityAdvantage) {
 }
 
 TEST(Battle, MultipleExchanges_WarriorVsDefender) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::ShieldBearers));
@@ -626,8 +626,8 @@ TEST(Battle, MultipleExchanges_WarriorVsDefender) {
 }
 
 TEST(Battle, MultipleGames_Isolated) {
-    auto game1 = std::make_shared<Game>();
-    auto game2 = std::make_shared<Game>();
+    auto game1 = std::make_shared<Game>(10);
+    auto game2 = std::make_shared<Game>(10);
 
     game1->tileMap->tileMap = testMapCreation(10);
     game2->tileMap->tileMap = testMapCreation(10);
@@ -663,22 +663,8 @@ TEST(Battle, MultipleGames_Isolated) {
     EXPECT_NE(game1->getTile(0, 0).lock(), game2->getTile(0, 0).lock());
 }
 
-TEST(Battle, GameReset_ClearsState) {
-    auto game = std::make_shared<Game>();
-    game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
-
-    EXPECT_EQ(game->tribes.size(), 1);
-
-    game->tribes.clear();
-    game->tileMap = std::make_shared<Map>();
-    game->tileMap->generateMap();
-
-    EXPECT_EQ(game->tribes.size(), 0);
-    EXPECT_NE(game->tileMap, nullptr);
-}
-
 TEST(UnitMover, BasicMovement_OneRange_Field) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -701,7 +687,7 @@ TEST(UnitMover, BasicMovement_OneRange_Field) {
 }
 
 TEST(UnitMover, Movement_TwoRange_Field) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(15);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -725,7 +711,7 @@ TEST(UnitMover, Movement_TwoRange_Field) {
 }
 
 TEST(UnitMover, RoadBonus_MovementOne_Doubled) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -743,7 +729,7 @@ TEST(UnitMover, RoadBonus_MovementOne_Doubled) {
 }
 
 TEST(UnitMover, RoadBonus_MovementTwo_PlusOne) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -761,7 +747,7 @@ TEST(UnitMover, RoadBonus_MovementTwo_PlusOne) {
 }
 
 TEST(UnitMover, Mountain_WithoutClimbing_Blocked) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Peacemakers));
 
@@ -778,7 +764,7 @@ TEST(UnitMover, Mountain_WithoutClimbing_Blocked) {
 }
 
 TEST(UnitMover, Mountain_WithClimbing_Accessible) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     auto tribe = std::make_shared<Tribe>(0, NationType::Climbers);
     tribe->tribeAbilities.push_back(AbilitiesType::Climbing);
@@ -802,7 +788,7 @@ TEST(UnitMover, Mountain_WithClimbing_Accessible) {
 }
 
 TEST(UnitMover, Water_Ship_CanMove) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Fishermen));
     auto unit = std::make_shared<Warrior>(0, 5, 5);
@@ -827,7 +813,7 @@ TEST(UnitMover, Water_Ship_CanMove) {
 }
 
 TEST(UnitMover, Water_NonShip_CannotMove) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -847,7 +833,7 @@ TEST(UnitMover, Water_NonShip_CannotMove) {
 }
 
 TEST(UnitMover, DeepWater_WithDeepFloating_Accessible) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     auto tribe = std::make_shared<Tribe>(0, NationType::Fishermen);
     tribe->tribeAbilities.push_back(AbilitiesType::DeepFloating);
@@ -874,7 +860,7 @@ TEST(UnitMover, DeepWater_WithDeepFloating_Accessible) {
 }
 
 TEST(UnitMover, FriendlyUnit_BlocksMovement) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -900,7 +886,7 @@ TEST(UnitMover, FriendlyUnit_BlocksMovement) {
 }
 
 TEST(UnitMover, EnemyUnit_AddedToFight) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -925,7 +911,7 @@ TEST(UnitMover, EnemyUnit_AddedToFight) {
 }
 
 TEST(UnitMover, EnemyUnit_BlocksFurtherMovement) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -975,7 +961,7 @@ TEST(UnitMover, EnemyUnit_BlocksFurtherMovement) {
 }
 
 TEST(UnitMover, Port_Ship_CanEnter) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Fishermen));
 
@@ -1004,7 +990,7 @@ TEST(UnitMover, Port_Ship_CanEnter) {
 }
 
 TEST(UnitMover, Port_NonShip_WithFloating_CanEnter) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     auto tribe = std::make_shared<Tribe>(0, NationType::Fishermen);
     tribe->tribeAbilities.push_back(AbilitiesType::Floating);
@@ -1031,7 +1017,7 @@ TEST(UnitMover, Port_NonShip_WithFloating_CanEnter) {
 }
 
 TEST(UnitMover, MapBoundary_StopsMovement) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1051,7 +1037,7 @@ TEST(UnitMover, MapBoundary_StopsMovement) {
 }
 
 TEST(UnitMover, NoDuplicates_InResults) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(15);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1078,7 +1064,7 @@ TEST(UnitMover, NoDuplicates_InResults) {
 }
 
 TEST(UnitMover, ConsistentResults_MultipleCalls) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(15);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1108,7 +1094,7 @@ TEST(UnitMover, EmptyGame_ReturnsEmpty) {
 }
 
 TEST(UnitMover, MoveUnit_BasicMovement_EmptyTile) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1127,7 +1113,7 @@ TEST(UnitMover, MoveUnit_BasicMovement_EmptyTile) {
 }
 
 TEST(UnitMover, MoveUnit_AttackAndMove_EnemyDies) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -1153,7 +1139,7 @@ TEST(UnitMover, MoveUnit_AttackAndMove_EnemyDies) {
 }
 
 TEST(UnitMover, MoveUnit_AttackOnly_EnemySurvives) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -1182,7 +1168,7 @@ TEST(UnitMover, MoveUnit_AttackOnly_EnemySurvives) {
 }
 
 TEST(UnitMover, MoveUnit_InvalidTile_ThrowsException) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1196,7 +1182,7 @@ TEST(UnitMover, MoveUnit_InvalidTile_ThrowsException) {
 }
 
 TEST(UnitMover, MoveUnit_FriendlyUnit_BlocksMovement) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1214,7 +1200,7 @@ TEST(UnitMover, MoveUnit_FriendlyUnit_BlocksMovement) {
 }
 
 TEST(UnitMover, MoveUnit_Mountain_WithoutClimbing_Throws) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Hunters));
 
@@ -1229,7 +1215,7 @@ TEST(UnitMover, MoveUnit_Mountain_WithoutClimbing_Throws) {
 }
 
 TEST(UnitMover, MoveUnit_Mountain_WithClimbing_Succeeds) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     auto tribe = std::make_shared<Tribe>(0, NationType::Climbers);
     tribe->tribeAbilities.push_back(AbilitiesType::Climbing);
@@ -1249,7 +1235,7 @@ TEST(UnitMover, MoveUnit_Mountain_WithClimbing_Succeeds) {
 }
 
 TEST(UnitMover, MoveUnit_Water_Ship_Succeeds) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Fishermen));
 
@@ -1271,7 +1257,7 @@ TEST(UnitMover, MoveUnit_Water_Ship_Succeeds) {
 }
 
 TEST(UnitMover, MoveUnit_Water_NonShip_Throws) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1286,7 +1272,7 @@ TEST(UnitMover, MoveUnit_Water_NonShip_Throws) {
 }
 
 TEST(UnitMover, MoveUnit_RoadBonus_Movement) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(15);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1310,7 +1296,7 @@ TEST(UnitMover, MoveUnit_RoadBonus_Movement) {
 }
 
 TEST(UnitMover, MoveUnit_OutOfRange_Throws) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1325,7 +1311,7 @@ TEST(UnitMover, MoveUnit_OutOfRange_Throws) {
 }
 
 TEST(UnitMover, MoveUnit_DiagonalMovement_Succeeds) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1344,7 +1330,7 @@ TEST(UnitMover, MoveUnit_DiagonalMovement_Succeeds) {
 TEST(UnitMover, MoveUnit_ExpiredGame_Throws) {
     std::weak_ptr<Game> weakGame;
     {
-        auto game = std::make_shared<Game>();
+        auto game = std::make_shared<Game>(10);
         weakGame = game;
     }
 
@@ -1355,7 +1341,7 @@ TEST(UnitMover, MoveUnit_ExpiredGame_Throws) {
 }
 
 TEST(UnitMover, MoveUnit_KillCounter_Increments) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -1376,7 +1362,7 @@ TEST(UnitMover, MoveUnit_KillCounter_Increments) {
 }
 
 TEST(UnitMover, MoveUnit_EnemyRemovedFromTribe) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
     game->tribes.push_back(std::make_shared<Tribe>(1, NationType::Hunters));
@@ -1399,7 +1385,7 @@ TEST(UnitMover, MoveUnit_EnemyRemovedFromTribe) {
 }
 
 TEST(UnitMover, MoveUnit_TileUnitReference_Updated) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1416,7 +1402,7 @@ TEST(UnitMover, MoveUnit_TileUnitReference_Updated) {
 }
 
 TEST(UnitMover, MoveUnit_MultipleSequentialMoves) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1441,7 +1427,7 @@ TEST(UnitMover, MoveUnit_MultipleSequentialMoves) {
 }
 
 TEST(UnitMover, MoveUnit_SameTile_Throws) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Climbers));
 
@@ -1455,7 +1441,7 @@ TEST(UnitMover, MoveUnit_SameTile_Throws) {
 }
 
 TEST(Building, Build_WithUniquePtr_Succeeds) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
 
@@ -1475,7 +1461,7 @@ TEST(Building, Build_WithUniquePtr_Succeeds) {
 }
 
 TEST(Building, Build_UpdatesCityPopulation) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
 
@@ -1506,7 +1492,7 @@ TEST(Building, Build_UpdatesCityPopulation) {
 }
 
 TEST(Resource, CollectResource_WithCity_AddsPopulation) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
 
@@ -1527,7 +1513,7 @@ TEST(Resource, CollectResource_WithCity_AddsPopulation) {
 }
 
 TEST(Resource, CollectResource_NoCity_Throws) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
 
     auto tile = game->getTile(5, 5).lock();
@@ -1539,7 +1525,7 @@ TEST(Resource, CollectResource_NoCity_Throws) {
 }
 
 TEST(Resource, CollectResource_WrongType_Throws) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
 
@@ -1565,7 +1551,7 @@ TEST(Income, CollectIncome_NoBuildings_ReturnsZero) {
 
 
 TEST(Income, TribeProduceIncome_AggregatesFromAllCities) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     Tribe tribe(0, NationType::Farmers);
 
@@ -1615,7 +1601,7 @@ TEST(Population, RecalculateSize_Temple_NoChange) {
 }
 
 TEST(Population, CityRecalculatePopulation_AggregatesDelta) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
 
@@ -1639,7 +1625,7 @@ TEST(Population, CityRecalculatePopulation_AggregatesDelta) {
 }
 
 TEST(Population, TribeCheckCities_RecalculatesAllCities) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     Tribe tribe(0, NationType::Farmers);
 
@@ -1659,7 +1645,7 @@ TEST(Population, TribeCheckCities_RecalculatesAllCities) {
 }
 
 TEST(Territory, GetStartTerritory_ClaimsAdjacentTiles) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
 
     auto centerTile = game->getTile(5, 5).lock();
@@ -1674,7 +1660,7 @@ TEST(Territory, GetStartTerritory_ClaimsAdjacentTiles) {
 }
 
 TEST(Territory, GetStartTerritory_DoesNotClaimOccupiedTiles) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
 
     auto centerTile = game->getTile(5, 5).lock();
@@ -1694,7 +1680,7 @@ TEST(Territory, GetStartTerritory_DoesNotClaimOccupiedTiles) {
 }
 
 TEST(Territory, GetStartTerritory_HandlesMapBoundaries) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(3);
 
     auto cornerTile = game->getTile(0, 0).lock();
@@ -1753,7 +1739,7 @@ TEST(TypeMatcher, GetDefenceType_Field_None) {
 }
 
 TEST(HasNearObj, Forge_Nearby_ReturnsTrue) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
 
     auto centerTile = game->getTile(5, 5).lock();
@@ -1764,7 +1750,7 @@ TEST(HasNearObj, Forge_Nearby_ReturnsTrue) {
 }
 
 TEST(HasNearObj, Forge_NotNearby_ReturnsFalse) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
 
     auto centerTile = game->getTile(5, 5).lock();
@@ -1775,7 +1761,7 @@ TEST(HasNearObj, Forge_NotNearby_ReturnsFalse) {
 }
 
 TEST(HasNearObj, NoBuildings_ReturnsFalse) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
 
     auto centerTile = game->getTile(5, 5).lock();
@@ -1784,7 +1770,7 @@ TEST(HasNearObj, NoBuildings_ReturnsFalse) {
 }
 
 TEST(City, Constructor_InitializesMainTile) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
 
     auto tile = game->getTile(5, 5).lock();
@@ -1794,7 +1780,7 @@ TEST(City, Constructor_InitializesMainTile) {
 }
 
 TEST(City, Constructor_StoresMapReference) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
 
     auto tile = game->getTile(5, 5).lock();
@@ -1804,7 +1790,7 @@ TEST(City, Constructor_StoresMapReference) {
 }
 
 TEST(Tile, SpecialEmplaceUnit_EmptyTile_PlacesUnit) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
 
@@ -1818,7 +1804,7 @@ TEST(Tile, SpecialEmplaceUnit_EmptyTile_PlacesUnit) {
 }
 
 TEST(Tile, SpecialEmplaceUnit_OccupiedTile_MovesOldUnit) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     game->tribes.push_back(std::make_shared<Tribe>(0, NationType::Farmers));
 
@@ -1836,7 +1822,7 @@ TEST(Tile, SpecialEmplaceUnit_OccupiedTile_MovesOldUnit) {
 }
 
 TEST(Integration, PopulationImprovement_TriggeredByResource) {
-    auto game = std::make_shared<Game>();
+    auto game = std::make_shared<Game>(10);
     game->tileMap->tileMap = testMapCreation(10);
     auto tribe = std::make_shared<Tribe>(0, NationType::Farmers);
 

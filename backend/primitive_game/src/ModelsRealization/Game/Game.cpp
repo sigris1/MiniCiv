@@ -4,8 +4,10 @@
 
 #include "Models/Game/Game.h"
 
-Game::Game() {
-    tileMap = std::make_shared<Map>();
+Game::Game(int size):
+    mapSize(size)
+{
+    tileMap = std::make_shared<Map>(mapSize);
     tileMap->generateMap();
 }
 
@@ -25,7 +27,7 @@ Tribe* Game::getWinner() {
             return t.get();
         }
     }
-}
+};
 
 std::shared_ptr<Tribe> Game::getTribe(int tribeId) {
     return tribes[tribeId];
@@ -33,4 +35,8 @@ std::shared_ptr<Tribe> Game::getTribe(int tribeId) {
 
 std::weak_ptr<Tile> Game::getTile(int X, int Y) {
     return tileMap->getTile(X, Y);
+}
+
+void Game::generateMap(){
+    tileMap->generateMap();
 }

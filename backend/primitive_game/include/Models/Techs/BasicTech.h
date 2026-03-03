@@ -5,14 +5,14 @@
 
 #include <utility>
 
-#include "../Buildings/BuildingType.h"
-#include "../Units/UnitType.h"
-#include "../Achivemets/AchiveType.h"
-#include "../Resource/ResourceType.h"
-#include "../Terrains/TerrainTypes.h"
+#include "Models/Buildings/BuildingType.h"
+#include "Models/Units/UnitType.h"
+#include "Models/Achivemets/AchiveType.h"
+#include "Models/Resource/ResourceType.h"
+#include "Models/Terrains/TerrainTypes.h"
 #include "memory"
 #include "vector"
-#include "../Tribe/TribeAbilitiesTypes.h"
+#include "Models/Tribe/TribeAbilitiesTypes.h"
 
 class BasicTech {
 public:
