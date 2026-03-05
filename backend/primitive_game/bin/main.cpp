@@ -37,7 +37,7 @@ void printMap(Map* map){
 }
 
 int main(){
-    auto map = std::make_shared<Map>(18);
+    auto map = std::make_shared<Map>(20);
     map->generateMap();
     printMap(map.get());
 }

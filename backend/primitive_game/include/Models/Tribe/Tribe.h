@@ -38,7 +38,7 @@ public:
     std::vector<AbilitiesType> tribeAbilities;
     std::map<std::unique_ptr<BasicAchive>, int> progress;
     TechTree tree;
-    std::atomic<int> balance = 0;
+    int balance = 0;
     int tribeId;
     NationType type;
     Tribe(int id, NationType tribeType);

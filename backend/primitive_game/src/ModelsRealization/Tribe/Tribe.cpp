@@ -91,7 +91,7 @@ void Tribe::produceIncome() {
                                          for (int i = start; i < end; ++i) {
                                              if (auto city = cities[i].lock()) {
                                                  city->getIncome();
-                                                 balance += city->produceCoins();
+                                                 localSum += city->produceCoins();
                                              }
                                          }
                                          return localSum;
@@ -99,9 +99,8 @@ void Tribe::produceIncome() {
     }
 
     for (auto& f : futures) {
-        f.get();
+        balance += f.get();
     }
-
 }
 
 bool canBuildBridge(std::weak_ptr<Game> game, const std::weak_ptr<Tile>& tile){
