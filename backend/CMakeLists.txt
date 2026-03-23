@@ -10,7 +10,7 @@ target_sources(game_lib PRIVATE
 )
 
 target_include_directories(game_lib PUBLIC
-        primitive_game/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/primitive_game/include
 )
 
 add_executable(game_app

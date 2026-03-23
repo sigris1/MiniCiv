@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(BUILD_TESTING "Build tests" OFF)
 
 add_subdirectory(backend)
-
+add_subdirectory(server)
 
 enable_testing()
 
