@@ -4,7 +4,7 @@
 
 #pragma once
 #include "Models/Tribe/NationType.h"
-#include "../gameSession/GameSession.h"
+#include "gameSession/GameSession.h"
 
 class Action;
 class Bot;

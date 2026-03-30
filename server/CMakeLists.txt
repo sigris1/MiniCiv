@@ -1,6 +1,8 @@
 find_package(Boost REQUIRED)
 find_package(PostgreSQL REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(nlohmann_json REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 pkg_check_modules(HIREDIS REQUIRED IMPORTED_TARGET hiredis)
 
@@ -16,7 +18,7 @@ target_sources(server_lib PRIVATE
 )
 
 target_include_directories(server_lib PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(server_lib PUBLIC
@@ -24,6 +26,8 @@ target_link_libraries(server_lib PUBLIC
         Boost::boost
         PostgreSQL::PostgreSQL
         PkgConfig::HIREDIS
+        nlohmann_json::nlohmann_json
+        OpenSSL::Crypto
 )
 
 target_compile_features(server_lib PUBLIC cxx_std_20)

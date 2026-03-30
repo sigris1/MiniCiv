@@ -13,6 +13,7 @@
 class Action;
 class User;
 class ActionRouter;
+class GameRepository;
 
 class GameSession : public std::enable_shared_from_this<GameSession> {
 public:
@@ -21,7 +22,7 @@ public:
     void endTurn();
     int revealWinner();
     int getCurrentPlayer();
-    void makeAction(std::shared_ptr<Action> action);
+    void makeAction(std::weak_ptr<Action> action);
     void invitePlayer(int id);
     void addBot();
     void confirmStart();

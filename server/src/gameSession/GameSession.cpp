@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "../../include/gameSession/GameSession.h"
-#include "../../include/User/User.h"
-#include "../../include/EngineElements/ActionRealizer.h"
-#include "../../include/EngineElements/ActionRouter.h"
+#include "gameSession/GameSession.h"
+#include "User/User.h"
+#include "EngineElements/ActionRealizer.h"
+#include "EngineElements/ActionRouter.h"
 
 GameSession::GameSession(int id, int size) :
     gameId(id),
@@ -37,9 +37,9 @@ int GameSession::getCurrentPlayer() {
 }
 
 //TODO Получить ход от юзера и реализовать его
-void GameSession::makeAction(std::shared_ptr<Action> action) {
+void GameSession::makeAction(std::weak_ptr<Action> action) {
     std::lock_guard<std::mutex> lock(mutex_);
-    ActionRouter::Route(std::move(action), shared_from_this());
+    ActionRouter::Route(action, shared_from_this());
 }
 
 //TODO выкинуть в редис приглос, а юзер его считывает и потом выводит его в интерфейс залогиненный на того юзера

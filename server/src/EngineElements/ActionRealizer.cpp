@@ -2,14 +2,16 @@
 // Created by sigris on 23.03.2026.
 //
 
-#include "../../include/EngineElements/ActionRealizer.h"
-#include "../../include/Actions/Action.h"
-#include "../../include/EngineElements/IndexDisposer.h"
+#include "EngineElements/ActionRealizer.h"
+#include "Actions/Action.h"
+#include "EngineElements/IndexDisposer.h"
+#include "iostream"
 
 void UnitMoveAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
     gameSession->game->getTribe(gameSession->getCurrentPlayer())->moveUnit(gameSession->game,
                                                                            gameSession->game->getTile(action->fromX, action->fromY).lock()->unit.lock(),
                                                                            gameSession->game->getTile(action->toX, action->toY));
+    std::cout << "bre";
 }
 
 void UnitFightAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {

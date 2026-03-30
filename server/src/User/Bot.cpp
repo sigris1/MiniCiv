@@ -4,9 +4,9 @@
 
 #include <utility>
 
-#include "../include/User/Bot.h"
-#include "../include/Actions/Action.h"
-#include "../include/EngineElements/BotOperator.h"
+#include "User/Bot.h"
+#include "Actions/Action.h"
+#include "EngineElements/BotOperator.h"
 
 
 Bot::Bot(int id, std::string bNick, std::string pass, BotDifficulty botDifficulty) :
@@ -31,9 +31,13 @@ void Bot::makeTurn(std::shared_ptr<GameSession> game){
 }
 
 void Bot::makeAction(std::shared_ptr<GameSession> game, std::weak_ptr<Action> action) {
-    game->makeAction(std::move(action));
+    game->makeAction(action);
 }
 
 std::shared_ptr<Tribe> Bot::chooseTribe(bool isRandom, NationType type){
     return std::make_shared<Tribe>(id_, RandomGenerator::generateTribeType());
+}
+
+void Bot::concedeGame(std::shared_ptr<GameSession> game) {
+    throw std::logic_error("Bot cannot concede");
 }

@@ -18,7 +18,7 @@ public:
     void assertGame(std::shared_ptr<GameSession> game) override;
     void makeTurn(std::shared_ptr<GameSession> game) override;
     void makeAction(std::shared_ptr<GameSession> game, std::weak_ptr<Action> action) override;
-    void concedeGame(std::shared_ptr<GameSession> game) override = 0;
+    void concedeGame(std::shared_ptr<GameSession> game) override;
     std::shared_ptr<Tribe> chooseTribe(bool isRandom, NationType type) override;
     BotDifficulty difficulty;
 };

@@ -3,9 +3,9 @@
 //
 
 #pragma once
-#include "../Actions/Action.h"
+#include "Actions/Action.h"
 #include "memory"
-#include "../gameSession/GameSession.h"
+#include "gameSession/GameSession.h"
 
 template<typename Act>
 class ActionRealizer{
