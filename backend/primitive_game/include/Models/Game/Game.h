@@ -15,7 +15,7 @@ public:
     std::shared_ptr<Map> tileMap;
     std::vector<std::shared_ptr<Tribe>> tribes;
     int mapSize;
-    Game(int size);
+    Game(int size, bool skip_map_generation = false);
     bool isFinished();
     Tribe* getWinner();
     std::shared_ptr<Tribe> getTribe(int tribeId);

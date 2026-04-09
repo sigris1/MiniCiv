@@ -9,21 +9,20 @@
 
 void UnitMoveAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
     gameSession->game->getTribe(gameSession->getCurrentPlayer())->moveUnit(gameSession->game,
-                                                                           gameSession->game->getTile(action->fromX, action->fromY).lock()->unit.lock(),
+                                                                           gameSession->game->getTile(action->fromY, action->fromX).lock()->unit.lock(),
                                                                            gameSession->game->getTile(action->toX, action->toY));
-    std::cout << "bre";
 }
 
 void UnitFightAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
     gameSession->game->getTribe(gameSession->getCurrentPlayer())->moveUnit(gameSession->game,
-                                                                           gameSession->game->getTile(action->fromX, action->fromY).lock()->unit.lock(),
+                                                                           gameSession->game->getTile(action->fromY, action->fromX).lock()->unit.lock(),
                                                                            gameSession->game->getTile(action->toX, action->toY));
 }
 
 void UnitCaptureAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
     auto city = gameSession->game->getTile(action->toX, action->toY).lock()->city.lock();
     gameSession->game->getTribe(city->tribeId)->loseCity(city);
-    gameSession->game->getTribe(gameSession->getCurrentPlayer())->addCity(city);
+    gameSession->game->getTribe(gameSession->getCurrentPlayer() + 1)->addCity(city);
 }
 
 void TribeRevealAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
@@ -46,9 +45,7 @@ void TribeEndTurnAction::handle(std::shared_ptr<Action> action, std::shared_ptr<
 void TileCollectAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
     if (action->confirmAction == ConfirmAction::Accept) {
         gameSession->game->getTribe(gameSession->getCurrentPlayer())->collectResource(gameSession->game,
-                                                                                      gameSession->game->getTile(
-                                                                                              action->fromX,
-                                                                                              action->fromY),
+                                                                                      gameSession->game->getTile(action->fromY, action->fromX),
                                                                                       IndexDisposer::getResourceByIndex(
                                                                                               action->toX));
     }
@@ -57,8 +54,7 @@ void TileCollectAction::handle(std::shared_ptr<Action> action, std::shared_ptr<G
 void TileBuildAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
     if (action->confirmAction == ConfirmAction::Accept) {
         gameSession->game->getTribe(gameSession->getCurrentPlayer())->build(gameSession->game,
-                                                                            gameSession->game->getTile(action->fromX,
-                                                                                                       action->fromY),
+                                                                            gameSession->game->getTile(action->fromY, action->fromX),
                                                                             IndexDisposer::getBuildingTypeByIndex(
                                                                                     action->toX));
     }
@@ -66,8 +62,9 @@ void TileBuildAction::handle(std::shared_ptr<Action> action, std::shared_ptr<Gam
 
 void CityRecruitAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
     if (action->confirmAction == ConfirmAction::Accept) {
+
         gameSession->game->getTribe(gameSession->getCurrentPlayer())->recruitUnit(
-                gameSession->game->getTile(action->fromX, action->fromY).lock()->city,
+                gameSession->game->getTile(action->fromY, action->fromX).lock()->city,
                 IndexDisposer::getUnitTypeByIndex(action->toX));
     }
 }

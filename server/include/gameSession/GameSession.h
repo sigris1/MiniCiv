@@ -17,7 +17,7 @@ class GameRepository;
 
 class GameSession : public std::enable_shared_from_this<GameSession> {
 public:
-    GameSession(int id, int size);
+    GameSession(int id, int size, bool skip_map_generation = false);
     int gameId;
     void endTurn();
     int revealWinner();
@@ -30,16 +30,21 @@ public:
     void confirmPlayer(int id);
     void concededByPlayer(int id);
     void setGameCondition(int players, int bots);
+    bool isGameStarted() const { return gameStarted; }
+    bool isGameEnded() const { return gameEnded; }
+    int getPlayersCount() const { return playersCount_; }
+    int getBotsCount() const { return botsCount_; }
     std::shared_ptr<Game> game;
+    std::mt19937 rng_;
+    int currentPlayer_ = 1;
 private:
     mutable std::mutex mutex_;
-    std::mt19937 rng_;
     int playersCount_;
     int botsCount_;
     std::unordered_set<int> confirmedPlayers;
     std::vector<std::shared_ptr<User>> players_;
     std::vector<std::shared_ptr<User>> bots_;
-    int currentPlayer_ = 0;
+
     bool gameStarted = false;
     bool gameEnded = false;
 };

@@ -19,10 +19,11 @@ std::shared_ptr<GameSessionManager> GameSessionManager::getManager() {
 }
 
 std::shared_ptr<GameSession> GameSessionManager::newSession(int size) {
-
     std::lock_guard<std::mutex> lock(mutex_);
-    std::cout << "new";
     auto session = std::make_shared<GameSession>(repository_->size() + 1, size);
+    auto neutralTribe = std::make_shared<Tribe>(-1, NationType::Climbers);
+    neutralTribe->balance = 0;
+    session->game->tribes.push_back(neutralTribe);
 
 //    repository_->save(session);
     return session;

@@ -24,13 +24,37 @@ class City;
 class Player;
 class Tribe;
 
+struct GameInfo {
+    int id;
+    int map_size;
+    std::string status;
+    int max_players;
+    bool is_private;
+    int players_count;
+};
+
+struct CityDBData {
+    int id;
+    int main_tile_id;
+    int main_tile_x;
+    int main_tile_y;
+    int tribe_id;
+    int size;
+    int basic_economic;
+    int additional_economic;
+    int current_population;
+    int unit_count;
+    bool advanced_territory;
+    float defence_bonus;
+};
+
 class GameRepository {
 public:
     GameRepository();
     ~GameRepository();
 
     bool connect(const std::string& connection_string);
-    bool isConnected() const;
+    bool isConnected() const noexcept;
     void disconnect();
 
     void save(const std::shared_ptr<GameSession>& session);
@@ -47,7 +71,7 @@ public:
     bool updateTribeBalance(int game_id, int tribe_id, int balance);
     bool setTribeCapitalCity(int game_id, int tribe_id, int city_id);
 
-    int saveTile(int game_id, const std::shared_ptr<Tile>& tile);
+    int saveTile(int game_id, const std::shared_ptr<Tile>& tile, int x, int y);
     std::shared_ptr<Tile> loadTile(int game_id, int x, int y);
     std::shared_ptr<Tile> loadTileById(int tile_id);
     std::vector<std::shared_ptr<Tile>> loadGameTiles(int game_id);
@@ -67,14 +91,14 @@ public:
     bool updateUnit(int game_id, const std::shared_ptr<BasicUnit>& unit);
     bool deleteUnit(int game_id, int tribe_id, int x, int y);
 
-    int saveBuilding(int game_id, const std::shared_ptr<BasicBuilding>& building, int tile_id);
+    int saveBuilding(int game_id, const std::unique_ptr<BasicBuilding>& building, int tile_id);
     std::shared_ptr<BasicBuilding> loadBuilding(int game_id, int building_index);
     std::vector<std::shared_ptr<BasicBuilding>> loadTileBuildings(int game_id);
     std::vector<std::shared_ptr<BasicBuilding>> loadCityBuildings(int game_id, int city_id);
     bool updateBuilding(int game_id, const std::shared_ptr<BasicBuilding>& building);
     bool deleteBuilding(int game_id, int building_index);
 
-    int saveResource(int game_id, const std::shared_ptr<BasicResource>& resource, int tile_id);
+    int saveResource(int game_id, const std::unique_ptr<BasicResource>& resource, int tile_id);
     std::shared_ptr<BasicResource> loadResource(int game_id, int resource_index);
     std::vector<std::shared_ptr<BasicResource>> loadTileResources(int game_id);
     bool updateResource(int game_id, const std::shared_ptr<BasicResource>& resource);
@@ -108,7 +132,7 @@ public:
     std::vector<int> loadCityImprovements(int game_id, int tribe_id, int city_index);
     bool deleteCityImprovement(int game_id, int imp_id);
 
-    int getLastGameId() const;
+    int getLastGameId() const noexcept;
     size_t getTotalGames() const;
     bool beginTransaction();
     bool commitTransaction();
@@ -120,13 +144,22 @@ public:
     bool saveUserSession(int user_id, const std::string& token_hash, int expires_in_hours = 24);
     std::optional<int> validateUserToken(const std::string& token_hash);
     bool deactivateUserSession(const std::string& token_hash);
+
+    std::vector<GameInfo> getAvailableGames();
+    std::optional<GameInfo> getGameInfo(int game_id);
+    bool updateGameStatus(int game_id, const std::string& status);
+    std::optional<Player> loadPlayerById(int user_id);
+    bool updatePlayerTribe(int game_id, int user_id, int tribe_id);
+    [[nodiscard]] int getCityId(int game_id, int x, int y);
+    bool updateTribeCapital(int game_id, int tribe_id, int capital_city_id);
 private:
     struct PgConnDeleter {
-        void operator()(pg_conn* conn) const;
+        void operator()(pg_conn* conn) const noexcept;
     };
 
     std::unique_ptr<pg_conn, PgConnDeleter> conn_;
     std::unordered_map<int, std::shared_ptr<GameSession>> cache_;
+    std::unordered_map<std::string, int> tile_id_cache_;
 
     mutable std::mutex mutex_;
     mutable std::mutex transaction_mutex_;
@@ -139,5 +172,6 @@ private:
     void clearCache();
     void invalidateCache(int game_id);
     void logError(const std::string& context, const std::string& error) const;
+    int getTileId(int game_id, int x, int y);
 
 };

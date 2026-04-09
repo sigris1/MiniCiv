@@ -30,7 +30,7 @@ nlohmann::json Action::toJson() const {
 std::shared_ptr<Action> Action::fromJson(const nlohmann::json &j) {
     return std::make_shared<Action>(IndexDisposer::getActingByIndex(j.at("acting").get<int>()),
                                    IndexDisposer::getMainActionByIndex(j.at("mainAction").get<int>()),
-                                   IndexDisposer::getConfirmActionByIndex(j.value("confirmAction", 2)),
+                                   IndexDisposer::getConfirmActionByIndex(j.at("confirmAction").get<int>()),
                                    j.at("fromX").get<int>(),
                                    j.at("fromY").get<int>(),
                                    j.at("toX").get<int>(),

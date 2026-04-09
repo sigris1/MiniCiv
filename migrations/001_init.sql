@@ -45,13 +45,15 @@ CREATE TABLE games (
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        is_finished BOOLEAN DEFAULT FALSE,
-                       winner_tribe_id INTEGER
+                       winner_tribe_id INTEGER,
+                       current_player INTEGER DEFAULT 0
+
 );
 
 CREATE TABLE tribes (
                         id SERIAL PRIMARY KEY,
                         game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-                        tribe_id INTEGER NOT NULL,
+                        tribe_id INTEGER,
                         nation_type nation_type NOT NULL,
                         balance INTEGER DEFAULT 0,
                         capital_city_id INTEGER,
@@ -90,7 +92,7 @@ CREATE TABLE cities (
                         defence_bonus NUMERIC(3,2) DEFAULT 2.0,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(game_id, tribe_id, main_tile_id),
+                        UNIQUE(game_id, main_tile_id),
                         FOREIGN KEY (game_id, tribe_id) REFERENCES tribes(game_id, tribe_id) ON DELETE CASCADE
 );
 
@@ -160,7 +162,8 @@ CREATE TABLE technologies (
                               new_achive achive_type DEFAULT 'None',
                               new_defence defence_type DEFAULT 'None',
                               new_ability abilities_type DEFAULT 'None',
-                              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE technology_buildings (
@@ -201,6 +204,7 @@ CREATE TABLE tribe_abilities (
                                  tribe_id INTEGER NOT NULL,
                                  ability_type abilities_type NOT NULL,
                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                  UNIQUE(game_id, tribe_id, ability_type),
                                  FOREIGN KEY (game_id, tribe_id) REFERENCES tribes(game_id, tribe_id) ON DELETE CASCADE
 );
@@ -252,6 +256,7 @@ CREATE TABLE city_improvements (
                                    city_id INTEGER NOT NULL,
                                    improvement_type VARCHAR(50) NOT NULL,
                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                    UNIQUE(game_id, city_id, improvement_type),
                                    FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE
 );
@@ -259,14 +264,19 @@ CREATE TABLE city_improvements (
 CREATE INDEX idx_tiles_game_coordinates ON tiles(game_id, x, y);
 CREATE INDEX idx_tiles_owner ON tiles(game_id, owner_tribe_id);
 CREATE INDEX idx_cities_game_tribe ON cities(game_id, tribe_id);
+CREATE INDEX idx_cities_main_tile ON cities(main_tile_id);
 CREATE INDEX idx_units_game_tribe_pos ON units(game_id, tribe_id, x, y);
+CREATE INDEX idx_units_game_tribe ON units(game_id, tribe_id);
 CREATE INDEX idx_units_tile ON units(tile_id);
 CREATE INDEX idx_buildings_tile ON buildings(tile_id);
 CREATE INDEX idx_buildings_city ON buildings(city_id);
+CREATE INDEX idx_buildings_game ON buildings(game_id);
 CREATE INDEX idx_resources_tile ON resources(tile_id);
+CREATE INDEX idx_resources_game ON resources(game_id);
 CREATE INDEX idx_tribe_tech ON tribe_technologies(game_id, tribe_id);
 CREATE INDEX idx_achievements ON achievements(game_id, tribe_id);
 CREATE INDEX idx_tribe_abilities ON tribe_abilities(game_id, tribe_id);
+CREATE INDEX idx_tribes_game ON tribes(game_id);
 
 CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
@@ -296,7 +306,12 @@ CREATE TABLE game_players (
                               tribe_id INTEGER,
                               is_ready BOOLEAN DEFAULT FALSE,
                               joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                               PRIMARY KEY (game_id, user_id)
 );
 
 CREATE INDEX idx_game_players_user ON game_players(user_id);
+ALTER TABLE games ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'waiting';
+
+ALTER TABLE games ADD COLUMN IF NOT EXISTS max_players INTEGER DEFAULT 4;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT FALSE;

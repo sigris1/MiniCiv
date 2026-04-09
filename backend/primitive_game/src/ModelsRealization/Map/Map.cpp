@@ -224,4 +224,15 @@ void Map::generateMap() {
 
 Map::Map(int mapSize):
     size(mapSize)
-{};
+{}
+
+void Map::initializeEmptyMap() {
+    tileMap.clear();
+    tileMap.resize(size);
+    for (auto& v : tileMap) {
+        v.resize(size);
+        for (auto& tile : v) {
+            tile = nullptr;
+        }
+    }
+}

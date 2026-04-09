@@ -23,6 +23,10 @@ void City::getStartTerritory(){
 
     int size = map->tileMap.size();
 
+    auto curTile = map->getTile(startX, startY).lock();
+    curTile->ownedBy = shared_from_this();
+    curTile->ownerTribeId = this->tribeId;
+
     for (int x = -1; x < 2; ++x) {
         for (int y = -1; y < 2; ++y) {
             if (x == 0 and y == 0){
@@ -37,6 +41,7 @@ void City::getStartTerritory(){
                 auto targetTile = map->getTile(tileX, tileY).lock();
                 if (targetTile && targetTile->ownedBy.expired()) {
                     targetTile->ownedBy = shared_from_this();
+                    targetTile->ownerTribeId = this->tribeId;
                 }
             }
         }

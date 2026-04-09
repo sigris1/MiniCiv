@@ -17,6 +17,7 @@ void Tribe::addCity(const std::weak_ptr<City>& city) {
     auto c = city.lock();
     c->tribeId = this->tribeId;
     cities.push_back(c);
+    c->getStartTerritory();
 }
 
 void Tribe::loseCity(const std::weak_ptr<City>& city) {
@@ -234,6 +235,8 @@ void Tribe::moveUnit(std::weak_ptr<Game> game, const std::shared_ptr<BasicUnit>&
 void Tribe::recruitUnit(const std::weak_ptr<City>& place, UnitType unitType) {
     auto curCity = place.lock();
     auto newUnit = TypeMatcher::getUnitByUnitType(unitType, tribeId);
+    newUnit->x = curCity->mainTile.lock()->x;
+    newUnit->y = curCity->mainTile.lock()->y;
 
     if (curCity->tribeId != tribeId) {
         throw std::logic_error("You cannot recruit unit in non-owned city");
@@ -259,7 +262,13 @@ void Tribe::recruitUnit(const std::weak_ptr<City>& place, UnitType unitType) {
         throw std::logic_error("There are no money for recruit that unit");
     }
     balance -= newUnit->cost;
-    curCity->recruitUnit(std::move(newUnit));
+    std::cout << "[Tribe::recruitUnit] Created unit type=" << static_cast<int>(unitType)
+              << " at tribe_id=" << tribeId << ", x=" << newUnit->x << ", y=" << newUnit->y << "\n";
+    
+    std::shared_ptr<BasicUnit> sharedUnit(newUnit.release());
+    units.push_back(sharedUnit);
+
+    curCity->recruitUnit(std::make_unique<BasicUnit>(*sharedUnit));
 }
 
 void Tribe::collectResource(std::weak_ptr<Game> game, const std::weak_ptr<Tile>& tile, ResourceType resourceType){

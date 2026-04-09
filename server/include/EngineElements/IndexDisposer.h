@@ -6,6 +6,7 @@
 #include "Models/Techs/Techs.h"
 #include "Actions/ActionsPartTypes.h"
 #include "User/Bot.h"
+#include "Models/Terrains/TerrainTypes.h"
 
 class IndexDisposer {
 public:
@@ -168,7 +169,6 @@ public:
                 throw std::logic_error("Undefined resource");
         }
     }
-
     static Acting getActingByIndex(int x) {
         switch (x) {
             case 0:
@@ -351,6 +351,34 @@ public:
         return "Field";
     }
 
+    static std::string getTerrainTypeName(TerrainTypes type) {
+        static const std::vector<std::string> names = {
+                "None",
+                "Field",
+                "Forest",
+                "Mountain",
+                "Water",
+                "DeepWater"
+        };
+        int index = static_cast<int>(type);
+        if (index >= 0 && index < static_cast<int>(names.size())) {
+            return names[index];
+        }
+        return "Field";
+    }
+
+    static TerrainTypes getTerrainTypeByName(std::string name) {
+        static const std::unordered_map<std::string, TerrainTypes> lookup = {
+                {"Field", TerrainTypes::Field}, {"Forest", TerrainTypes::Forest}, {"Mountain", TerrainTypes::Mountain},
+                {"Water", TerrainTypes::Water}, {"DeepWater", TerrainTypes::DeepWater}
+        };
+        auto it = lookup.find(name);
+        if (it != lookup.end()){
+            return it->second;
+        }
+    }
+
+
     static int getTerrainTypeFromName(const std::string& name) {
         static const std::unordered_map<std::string, int> lookup = {
                 {"None", 0}, {"Field", 1}, {"Forest", 2}, {"Mountain", 3},
@@ -403,6 +431,15 @@ public:
         return "Overland";
     }
 
+    static std::string getUnitMovementTypeName(UnitMovementType type) {
+        static const std::unordered_map<UnitMovementType, std::string> lookup = {
+                {UnitMovementType::Overland, "Overland" }, {UnitMovementType::Hybrid, "Hybrid"}, {UnitMovementType::Aquatic, "Aquatic"}, {UnitMovementType::Flying,"Flying"}};
+        auto it = lookup.find(type);
+        if (it != lookup.end()) {
+            return it->second;
+        }
+    }
+
     static int getUnitMovementTypeFromName(const std::string& name) {
         static const std::unordered_map<std::string, int> lookup = {
                 {"Overland", 0}, {"Hybrid", 1}, {"Aquatic", 2}, {"Flying", 3}};
@@ -410,11 +447,44 @@ public:
         return (it != lookup.end()) ? it->second : 1;
     }
 
+    static UnitMovementType getUnitMovementTypeTypeFromName(const std::string& name) {
+        static const std::unordered_map<std::string, UnitMovementType> lookup = {
+                {"Overland", UnitMovementType::Overland}, {"Hybrid", UnitMovementType::Hybrid}, {"Aquatic", UnitMovementType::Aquatic}, {"Flying", UnitMovementType::Flying}};
+        auto it = lookup.find(name);
+        if (it != lookup.end()) {
+           return it->second;
+        }
+    }
+
     static std::string getUnitAttackTypeName(int type) {
         static const std::vector<std::string> names = {"Melee", "Ranged", "Enticement", "Magic"};
         if (type >= 0 && type < static_cast<int>(names.size())) return names[type];
         return "Melee";
     }
+
+    static std::string getUnitAttackTypeName(UnitAttackType type) {
+        static const std::unordered_map<UnitAttackType, std::string> lookup = {
+                {UnitAttackType::Melee, "Melee"}, {UnitAttackType::Ranged, "Ranged"}, {UnitAttackType::Enticement, "Enticement"}, {UnitAttackType::Peaceful, "Peaceful"},
+                {UnitAttackType::Splash, "Splash"}
+        };
+        auto it = lookup.find(type);
+        if (it != lookup.end()){
+            return it->second;
+        }
+    }
+
+    static UnitAttackType getUnitAttackTypeTypeFromName(std::string type) {
+        static const std::unordered_map<std::string, UnitAttackType> lookup = {
+                {"Melee", UnitAttackType::Melee}, {"Ranged", UnitAttackType::Ranged},
+                {"Enticement", UnitAttackType::Enticement}, {"Peaceful", UnitAttackType::Peaceful},
+                {"Splash", UnitAttackType::Splash}
+        };
+        auto it = lookup.find(type);
+        if (it != lookup.end()){
+            return it->second;
+        }
+    }
+
 
     static int getUnitAttackTypeFromName(const std::string& name) {
         static const std::unordered_map<std::string, int> lookup = {
@@ -448,10 +518,36 @@ public:
         return (it != lookup.end()) ? it->second : 0;
     }
 
+    static std::string getBuildingTypeFromType(BuildingType type) {
+        static const std::unordered_map<BuildingType, std::string> lookup = {
+                {BuildingType::Market, "Market"}, {BuildingType::Road, "Road"}, {BuildingType::Bridge, "Bridge"}, {BuildingType::Forge, "Forge"},
+                {BuildingType::Mill, "Mill"}, {BuildingType::LumberHat, "LumberHat"}, {BuildingType::Temple, "Temple"}, {BuildingType::WaterTemple, "WaterTemple"},
+                {BuildingType::MountainTemple, "MountainTemple"}, {BuildingType::ForestTemple, "ForestTemple"}, {BuildingType::Port, "Port"},
+                {BuildingType::ForestHouse, "ForestHouse"}, {BuildingType::Mining, "Mining"}, {BuildingType::Farming, "Farming"}, {BuildingType::TowerOfWisdom, "TowerOfWisdom"},
+                {BuildingType::AltarOfPeace, "AltarOfPeace"}, {BuildingType::ImperialTomb, "ImperialTomb"}, {BuildingType::EyeOfGod, "EyeOfGod"},
+                {BuildingType::FortunePark, "FortunePark"}, {BuildingType::KillerGates, "KillerGates"}, {BuildingType::GreatBazaar, "GreatBazaar"}
+        };
+        auto it = lookup.find(type);
+        if (it != lookup.end()) {
+            return it->second;
+        }
+    }
+
     static std::string getResourceTypeName(int type) {
         static const std::vector<std::string> names = {"None", "Forest", "Fish", "Mining", "Farm", "Animal", "Fruit"};
         if (type >= 0 && type < static_cast<int>(names.size())) return names[type];
         return "None";
+    }
+
+    static std::string getResourceTypeNameFromType(ResourceType type) {
+        static const std::unordered_map<ResourceType, std::string> lookup = {
+                {ResourceType::Forest, "Forest"}, {ResourceType::Fish, "Fish"}, {ResourceType::Mining, "Mining"},
+                {ResourceType::Farm, "Farm"}, {ResourceType::Animal, "Animal"}, {ResourceType::Fruit, "Fruit"}
+        };
+        auto it = lookup.find(type);
+        if (it != lookup.end()){
+            return it->second;
+        }
     }
 
     static int getResourceTypeFromName(const std::string& name) {
@@ -510,4 +606,32 @@ public:
         auto it = lookup.find(name);
         return (it != lookup.end()) ? it->second : 0;
     }
+
+    static NationType getNationTypeByName(const std::string& name){
+        static const std::unordered_map<std::string, NationType> lookup = {
+                {"Climbers", NationType::Climbers}, {"FruitCollectors", NationType::FruitCollectors}, {"Hunters", NationType::Hunters},
+                {"Riders", NationType::Riders}, {"Fishermen", NationType::Fishermen}, {"Archers", NationType::Archers}, {"Rich", NationType::Rich},
+                {"Swordsmen", NationType::Swordsmen}, {"Farmers", NationType::Farmers}, {"Peacemakers", NationType::Peacemakers},
+                {"ShieldBearers", NationType::ShieldBearers}, {"RoadCreators", NationType::RoadCreators}
+        };
+        auto it = lookup.find(name);
+        if (it != lookup.end()){
+            return it->second;
+        }
+        throw std::logic_error("Wrong nation type name");
+    }
+
+    static std::string getNationTypeName(NationType type){
+        static const std::unordered_map<NationType, std::string> lookup = {
+                {NationType::Climbers, "Climbers"}, {NationType::FruitCollectors, "FruitCollectors"}, {NationType::Hunters, "Hunters"},
+                {NationType::Riders, "Riders"}, {NationType::Fishermen, "Fishermen"}, {NationType::Archers, "Archers"}, {NationType::Rich, "Rich"},
+                {NationType::Swordsmen, "Swordsmen"}, {NationType::Farmers, "Farmers"}, {NationType::Peacemakers, "Peacemakers"},
+                {NationType::ShieldBearers, "ShieldBearers"}, {NationType::RoadCreators,"RoadCreators"}
+        };
+        auto it = lookup.find(type);
+        if (it != lookup.end()){
+            return it->second;
+        }
+    }
 };
+

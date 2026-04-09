@@ -9,11 +9,12 @@
 #include "EngineElements/ActionRealizer.h"
 #include "EngineElements/ActionRouter.h"
 
-GameSession::GameSession(int id, int size) :
+GameSession::GameSession(int id, int size, bool skip_map_generation) :
     gameId(id),
-    game(std::make_unique<Game>(size)),
+    game(std::make_unique<Game>(size, skip_map_generation)),
     rng_(std::random_device{}())
-{}
+{
+}
 
 
 void GameSession::endTurn() {
@@ -36,13 +37,12 @@ int GameSession::getCurrentPlayer() {
     return currentPlayer_;
 }
 
-//TODO Получить ход от юзера и реализовать его
 void GameSession::makeAction(std::weak_ptr<Action> action) {
     std::lock_guard<std::mutex> lock(mutex_);
     ActionRouter::Route(action, shared_from_this());
 }
 
-//TODO выкинуть в редис приглос, а юзер его считывает и потом выводит его в интерфейс залогиненный на того юзера
+//TODO позже
 void GameSession::invitePlayer(int id) {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -55,7 +55,7 @@ void GameSession::addBot() {
 }
 
 
-//TODO функция cетит от юзеров трайбы в игру, потом ставит им сталицы
+//TODO функция cетит от юзеров трайбы в игру, потом ставит им сталицы - в итоге по-другому, через самовыбор, пока непонятно, надо или нет
 void GameSession::launchGame(){
     game->generateMap();
     std::shuffle(players_.begin(), players_.end(), rng_);
@@ -77,9 +77,7 @@ void GameSession::launchGame(){
 void GameSession::confirmPlayer(int id) {
     std::lock_guard<std::mutex> lock(mutex_);
     confirmedPlayers.insert(id);
-    confirmStart();
 }
-
 void GameSession::confirmStart() {
     std::lock_guard<std::mutex> lock(mutex_);
     if (confirmedPlayers.size() == playersCount_){

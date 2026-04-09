@@ -62,7 +62,7 @@ void Tile::collectResource(std::weak_ptr<Game> game, ResourceType resType) {
 }
 
 void Tile::emplaceUnit(std::shared_ptr<BasicUnit> newUnit) {
-    if (!unit.expired()){
+    if (unit.expired()){
         newUnit->x = this->x;
         newUnit->y = this->y;
         unit = newUnit;

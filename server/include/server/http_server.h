@@ -29,7 +29,7 @@ public:
 
 private:
     void do_read();
-    void on_read(boost::beast::error_code ec, std::size_t bytes_transferred);
+    void on_read(boost::beast::error_code ec);
 
     void handle_request();
 
@@ -46,6 +46,12 @@ private:
     void handle_not_found();
     void handle_auth_register();
     void handle_auth_logout();
+    void handle_games_list();
+    void handle_game_ready();
+    void handle_game_start();
+    void handle_game_state();
+    void handle_tribe_select();
+    int extract_game_id_from_path(const std::string& path);
 
     std::optional<int> extractUserId();
 

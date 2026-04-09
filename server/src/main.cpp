@@ -89,7 +89,7 @@ int main() {
     server.run();
     std::cout << "Server ready on " << address << ":" << port << "\n";
 
-    initTestGame();
+//    initTestGame();
 
     std::signal(SIGINT, [](int) {
         std::cout << "\n Shutting down...\n";

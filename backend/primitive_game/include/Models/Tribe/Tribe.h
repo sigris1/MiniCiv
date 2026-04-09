@@ -54,6 +54,7 @@ public:
     int revealTechCost(std::weak_ptr<BasicTech> tech);
     void endTurn();
     std::vector<std::unique_ptr<AchivementBuilding>> getAchiveBuildings();
+    int capitalCityId_ = -1;
 private:
     void applyTech(const std::shared_ptr<BasicTech>& tech);
 };
