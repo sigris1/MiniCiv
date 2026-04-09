@@ -279,17 +279,16 @@ void GameRepository::save(const std::shared_ptr<GameSession>& session) {
         for (const auto& tribe : session->game->tribes) {
             if (!tribe) continue;
 
+            execute("DELETE FROM units WHERE game_id=" + std::to_string(gid) +
+                    " AND tribe_id=" + std::to_string(tribe->tribeId));
+
             for (const auto& unit : tribe->units) {
-                if (!unit) {
-                    continue;
-                }
+                if (!unit) continue;
                 total_units++;
                 ok &= (saveUnit(gid, unit) >= -1);
                 if (!ok) break;
             }
-            if (!ok) {
-                break;
-            }
+            if (!ok) break;
         }
     }
     if (!ok) {
@@ -559,6 +558,7 @@ GameRepository::load(int game_id) {
         for (auto& unit : tribe_units) {
             if (unit) {
                 tribe->units.push_back(unit);
+                session->game->tileMap->getTile(unit->y, unit->x).lock()->unit = unit;
                 ++units_loaded;
             }
         }
@@ -1012,7 +1012,7 @@ GameRepository::loadTribeUnits(int game_id, int tribe_id) {
         unit->killCounter = safeStoi(PQgetvalue(res.get(), i, 11), 0);
         out.push_back(unit);
     }
-    
+    return out;
 }
 
 [[nodiscard]] std::vector<std::shared_ptr<BasicUnit>>

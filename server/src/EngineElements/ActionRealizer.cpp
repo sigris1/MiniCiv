@@ -10,7 +10,7 @@
 void UnitMoveAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
     gameSession->game->getTribe(gameSession->getCurrentPlayer())->moveUnit(gameSession->game,
                                                                            gameSession->game->getTile(action->fromY, action->fromX).lock()->unit.lock(),
-                                                                           gameSession->game->getTile(action->toX, action->toY));
+                                                                           gameSession->game->getTile(action->toY, action->toX));
 }
 
 void UnitFightAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
