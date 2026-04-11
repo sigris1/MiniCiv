@@ -14,6 +14,7 @@
 #include "EngineElements/IndexDisposer.h"
 #include "User/Player.h"
 #include "Models/Terrains/TerrainTypes.h"
+#include "EngineElements/InfoEstimator.h"
 
 #include <libpq-fe.h>
 #include <iostream>
@@ -252,7 +253,27 @@ void GameRepository::save(const std::shared_ptr<GameSession>& session) {
             break;
         }
     }
-    if (!ok) goto rollback;
+    if (!ok) {
+        goto rollback;
+    }
+
+    {
+        for (const auto& tribe : session->game->tribes) {
+            if (!tribe) {
+                continue;
+            }
+            for (auto tech : tribe->knownTechs) {
+                int tech_id = loadTechFromList(tech);
+                ok &= saveTribeTechnology(gid, tribe->tribeId, tech_id, true);
+                if (!ok) {
+                    goto rollback;
+                }
+            }
+        }
+    }
+    if (!ok) {
+        goto rollback;
+    }
 
     {
         int saved = 0, failed = 0, null_tiles = 0;
@@ -564,6 +585,14 @@ GameRepository::load(int game_id) {
         }
     }
 
+    for (const auto& tribe : session->game->tribes) {
+        if (!tribe) continue;
+
+        tribe->knownTechs.clear();
+        auto loaded_techs = loadTribeTechnologies(game_id, tribe->tribeId);
+        tribe->knownTechs = std::move(loaded_techs);
+    }
+
     cache_[game_id] = session;
     return session;
 }
@@ -852,6 +881,8 @@ GameRepository::loadGameTiles(int game_id) {
         tile->ownerTribeId = (owner_val && *owner_val) ? safeStoi(owner_val, -1) : -1;
 
         tile->defenceModifier = safeStof(PQgetvalue(res.get(), i, 7), 1.0f);
+        tile->resources = std::move(loadResources(game_id, safeStoi(PQgetvalue(res.get(), i, 0))));
+        tile->buildings = std::move(loadTileBuildings(game_id, safeStoi(PQgetvalue(res.get(), i, 0)), tile->type));
         out.push_back(tile);
     }
     return out;
@@ -1176,7 +1207,7 @@ bool GameRepository::deleteCity(int game_id, int city_id) {
 }
 
 
-int GameRepository::saveBuilding(int game_id, const std::unique_ptr<BasicBuilding>& building, int tile_id) {
+int GameRepository::saveBuilding(int game_id, const std::shared_ptr<BasicBuilding>& building, int tile_id) {
     if (!isConnected() || !building || tile_id <= 0) {
         return -1;
     }
@@ -1203,7 +1234,7 @@ bool GameRepository::deleteBuilding(int game_id, int building_id) {
 }
 
 
-int GameRepository::saveResource(int game_id, const std::unique_ptr<BasicResource>& resource, int tile_id) {
+int GameRepository::saveResource(int game_id, const std::shared_ptr<BasicResource>& resource, int tile_id) {
     if (!isConnected() || !resource || tile_id <= 0) {
         return -1;
     }
@@ -1442,4 +1473,195 @@ bool GameRepository::updateTribeCapital(int game_id, int tribe_id, int capital_c
       << " WHERE game_id = " << game_id << " AND tribe_id = " << tribe_id;
 
     return execute(q.str());
+}
+
+void GameRepository::techImplacer(){
+    execute("DELETE FROM technologies;");
+    execute("ALTER SEQUENCE technologies_id_seq RESTART WITH 1;");
+
+    for (int x = 1; x <= 3; ++x) {
+        for (int y = 1; y <= 10; ++y) {
+            if (x == 1 && y > 5) {
+                continue;
+            }
+            auto tech = IndexDisposer::getTechByIndex(x, y);
+            if (!tech) {
+                continue;
+            }
+
+            std::string unit_str = tech->newUnit != UnitType::None ? IndexDisposer::getUnitTypeName(tech->newUnit) : "None";
+            std::string res_str  = tech->newResource != ResourceType::None ? IndexDisposer::getResourceTypeName(tech->newResource) : "None";
+            std::string ach_str  = tech->newAchive != AchiveType::None ? IndexDisposer::getAchiveTypeName(tech->newAchive) : "None";
+            std::string def_str  = tech->newDefence != DefenceType::None ? IndexDisposer::getDefenceTypeName(tech->newDefence) : "None";
+            std::string ab_str   = tech->newAbility != AbilitiesType::None ? IndexDisposer::getAbilityTypeName(tech->newAbility) : "None";
+            std::string first_build = "None";
+            std::string second_build = "None";
+
+            if (tech->newBuild.size() == 1){
+                first_build = tech->newBuild[0] != BuildingType::None ? IndexDisposer::getBuildingTypeFromType(tech->newBuild[0]) : "None";
+            } else if (tech->newBuild.size() == 2){
+                first_build = tech->newBuild[0] != BuildingType::None ? IndexDisposer::getBuildingTypeFromType(tech->newBuild[0]) : "None";
+                second_build = tech->newBuild[1] != BuildingType::None ? IndexDisposer::getBuildingTypeFromType(tech->newBuild[1]) : "None";
+            }
+
+            std::ostringstream q;
+            q << "INSERT INTO technologies (name, tech_x, tech_y, basic_cost, ranged_level, "
+              << "new_unit, new_resource, new_achive, new_defence, new_building_1, new_building_2, new_ability) VALUES ('"
+              << escapeString("Tech_" + std::to_string(x) + "_" + std::to_string(y)) << "', "
+              << x << ", " << y << ", 0, 0, '"
+              << escapeString(unit_str) << "', '"
+              << escapeString(res_str) << "', '"
+              << escapeString(ach_str) << "', '"
+              << escapeString(def_str) << "', '"
+              << escapeString(first_build) << "', '"
+              << escapeString(second_build) << "', '"
+              << escapeString(ab_str) << "') "
+              << "ON CONFLICT (tech_x, tech_y) DO NOTHING "
+              << "RETURNING id";
+
+            execute(q.str());
+        }
+    }
+}
+
+
+[[nodiscard]] std::vector<std::shared_ptr<BasicTech>> GameRepository::loadTribeTechnologies(int game_id, int tribe_id) {
+    std::vector<int> out;
+    auto res = fetchQuery("SELECT technology_id FROM tribe_technologies WHERE game_id=" + std::to_string(game_id) +
+                          " AND tribe_id=" + std::to_string(tribe_id) + " AND is_known=TRUE");
+    if (!res) {
+        return {};
+    }
+
+    for (int i = 0; i < PQntuples(res.get()); ++i) {
+        out.push_back(safeStoi(PQgetvalue(res.get(), i, 0), -1));
+    }
+    std::vector<std::shared_ptr<BasicTech>> ans;
+    for (int i : out){
+        ans.push_back(loadTechByIndex(i));
+    }
+    return ans;
+}
+
+[[nodiscard]] int GameRepository::loadTechFromList(std::shared_ptr<BasicTech> tech){
+    std::string unit_str = tech->newUnit != UnitType::None ? IndexDisposer::getUnitTypeName(tech->newUnit) : "None";
+    std::string res_str  = tech->newResource != ResourceType::None ? IndexDisposer::getResourceTypeName(tech->newResource) : "None";
+    std::string ach_str  = tech->newAchive != AchiveType::None ? IndexDisposer::getAchiveTypeName(tech->newAchive) : "None";
+    std::string def_str  = tech->newDefence != DefenceType::None ? IndexDisposer::getDefenceTypeName(tech->newDefence) : "None";
+    std::string ab_str   = tech->newAbility != AbilitiesType::None ? IndexDisposer::getAbilityTypeName(tech->newAbility) : "None";
+    std::string first_build = "None";
+    std::string second_build = "None";
+
+    if (tech->newBuild.size() == 1){
+        first_build = tech->newBuild[0] != BuildingType::None ? IndexDisposer::getBuildingTypeFromType(tech->newBuild[0]) : "None";
+    } else if (tech->newBuild.size() == 2){
+        first_build = tech->newBuild[0] != BuildingType::None ? IndexDisposer::getBuildingTypeFromType(tech->newBuild[0]) : "None";
+        second_build = tech->newBuild[1] != BuildingType::None ? IndexDisposer::getBuildingTypeFromType(tech->newBuild[1]) : "None";
+    }
+
+    std::ostringstream q;
+    q << "SELECT id FROM technologies WHERE "
+      << "new_unit = '" << escapeString(unit_str) << "' AND "
+      << "new_resource = '" << escapeString(res_str) << "' AND "
+      << "new_achive = '" << escapeString(ach_str) << "' AND "
+      << "new_defence = '" << escapeString(def_str) << "' AND "
+      << "new_building_1= '" << escapeString(first_build) << "' AND "
+      << "new_building_2= '" << escapeString(second_build) << "' AND "
+      << "new_ability = '" << escapeString(ab_str) << "' "
+      << "LIMIT 1";
+
+    auto res = fetchQuery(q.str());
+    if (res && PQntuples(res.get()) > 0) {
+        return safeStoi(PQgetvalue(res.get(), 0, 0), -1);
+    }
+    return -1;
+
+}
+
+std::shared_ptr<BasicTech> GameRepository::loadTechByIndex(int index) {
+    if (!isConnected() || index <= 0) {
+        return nullptr;
+    }
+
+    std::ostringstream q;
+    q << "SELECT basic_cost, ranged_level, new_unit, new_resource, "
+      << "new_ability, new_building_1 "
+      << "FROM technologies WHERE id = " << index << " LIMIT 1";
+
+    auto res = fetchQuery(q.str());
+    if (!res || PQntuples(res.get()) == 0) {
+        return nullptr;
+    }
+
+    auto getStr = [&](int col) -> std::string {
+        const char* val = PQgetvalue(res.get(), 0, col);
+        return val ? val : "None";
+    };
+
+    UnitType unit = IndexDisposer::getUnitTypeByName(getStr(2));
+    ResourceType resType = IndexDisposer::getResourceTypeByName(getStr(3));
+    AbilitiesType ability = IndexDisposer::getAbilityTypeByName(getStr(4));
+    BuildingType building = IndexDisposer::getBuildingTypeByName(getStr(5));
+
+    auto tech = InfoEstimator::estimateTech(unit, resType, ability, building);
+    if (!tech) {
+        return nullptr;
+    }
+
+
+    return tech;
+}
+
+bool GameRepository::saveTribeTechnology(int game_id, int tribe_id, int technology_id, bool is_known) {
+    if (!isConnected()) {
+        return false;
+    }
+
+    std::ostringstream q;
+    q << "INSERT INTO tribe_technologies (game_id, tribe_id, technology_id, is_known) VALUES ("
+      << game_id << ", " << tribe_id << ", " << technology_id << ", " << (is_known ? "TRUE" : "FALSE")
+      << ") ON CONFLICT (game_id, tribe_id, technology_id) DO UPDATE SET is_known=EXCLUDED.is_known";
+
+    return execute(q.str());
+}
+
+std::vector<std::shared_ptr<BasicResource>> GameRepository::loadResources(int game_id, int tile_id){
+    std::vector<std::shared_ptr<BasicResource>> out;
+    std::ostringstream q;
+    q << "SELECT resource_type "
+      << "FROM resources WHERE "
+      << "game_id= " << game_id << " AND "
+      << "tile_id= " << tile_id;
+
+    auto res = fetchQuery(q.str());
+    if (!res) {
+        return out;
+    }
+
+    for (int i = 0; i < PQntuples(res.get()); ++i) {
+        ResourceType rt = IndexDisposer::getResourceTypeByName(PQgetvalue(res.get(), i, 0));
+        auto res_obj = InfoEstimator::estimateResource(rt);
+
+        out.push_back(res_obj);
+    }
+    return out;
+}
+
+[[nodiscard]] std::vector<std::shared_ptr<BasicBuilding>> GameRepository::loadTileBuildings(int game_id, int tile_id, TerrainTypes type) {
+    std::vector<std::shared_ptr<BasicBuilding>> out;
+    if (!isConnected()) return out;
+
+    std::ostringstream q;
+    q << "SELECT building_type FROM building WHERE "
+      << "game_id = " << game_id << " AND tile_id = " << tile_id;
+
+    auto res = fetchQuery(q.str());
+    if (!res) return out;
+
+    for (int i = 0; i < PQntuples(res.get()); ++i) {
+        BuildingType bt = IndexDisposer::getBuildingTypeByName(PQgetvalue(res.get(), i, 0));
+        auto bld_obj = InfoEstimator::estimateBuilding(bt, type);
+        out.push_back(std::move(bld_obj));
+    }
+    return out;
 }

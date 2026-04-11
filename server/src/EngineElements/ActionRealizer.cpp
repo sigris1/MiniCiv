@@ -27,8 +27,10 @@ void UnitCaptureAction::handle(std::shared_ptr<Action> action, std::shared_ptr<G
 
 void TribeRevealAction::handle(std::shared_ptr<Action> action, std::shared_ptr<GameSession> gameSession) {
     if (action->confirmAction == ConfirmAction::Accept) {
-        gameSession->game->getTribe(gameSession->getCurrentPlayer())->revealTechCost(
-                IndexDisposer::getTechByIndex(action->toX, action->toY));
+        if (gameSession->game->getTribe(gameSession->getCurrentPlayer())->revealTechCost(
+                IndexDisposer::getTechByIndex(action->toX, action->toY)) <= gameSession->game->getTribe(gameSession->getCurrentPlayer())->balance){
+            gameSession->game->getTribe(gameSession->getCurrentPlayer())->learnTech( IndexDisposer::getTechByIndex(action->toX, action->toY));
+        };
     }
 }
 

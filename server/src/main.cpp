@@ -15,6 +15,7 @@
 #include "Models/Tribe/Tribe.h"
 #include "Models/Tile/Tile.h"
 #include "Models/Units/BasicUnits.h"
+#include "EngineElements/IndexDisposer.h"
 
 void initTestGame() {
     std::cout << "[Init] Creating test game session...\n";
@@ -66,6 +67,8 @@ void initTestGame() {
 
 }
 
+
+
 int main() {
     std::cout << "MiniCiv Server v0.1.0 starting...\n";
 
@@ -77,6 +80,7 @@ int main() {
         std::cerr << "Failed to connect to PostgreSQL\n";
         return 1;
     }
+    manager->getRepository().techImplacer();
     std::cout << "Connected to PostgreSQL\n";
 
     const std::string address = "0.0.0.0";

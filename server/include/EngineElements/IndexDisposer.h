@@ -169,6 +169,36 @@ public:
                 throw std::logic_error("Undefined resource");
         }
     }
+
+    [[nodiscard]] static BuildingType getBuildingTypeByName(const std::string& name) {
+        static const std::unordered_map<std::string, BuildingType> map = {
+                {"Market", BuildingType::Market},
+                {"Road", BuildingType::Road},
+                {"Bridge", BuildingType::Bridge},
+                {"Forge", BuildingType::Forge},
+                {"Mill", BuildingType::Mill},
+                {"LumberHat", BuildingType::LumberHat},
+                {"Temple", BuildingType::Temple},
+                {"WaterTemple", BuildingType::WaterTemple},
+                {"MountainTemple", BuildingType::MountainTemple},
+                {"ForestTemple", BuildingType::ForestTemple},
+                {"Port", BuildingType::Port},
+                {"ForestHouse", BuildingType::ForestHouse},
+                {"Mining", BuildingType::Mining},
+                {"Farming", BuildingType::Farming},
+                {"TowerOfWisdom", BuildingType::TowerOfWisdom},
+                {"AltarOfPeace", BuildingType::AltarOfPeace},
+                {"ImperialTomb", BuildingType::ImperialTomb},
+                {"EyeOfGod", BuildingType::EyeOfGod},
+                {"FortunePark", BuildingType::FortunePark},
+                {"KillerGates", BuildingType::KillerGates},
+                {"GreatBazaar", BuildingType::GreatBazaar}
+        };
+
+        auto it = map.find(name);
+        return it != map.end() ? it->second : BuildingType::None;
+    }
+
     static Acting getActingByIndex(int x) {
         switch (x) {
             case 0:
@@ -632,6 +662,127 @@ public:
         if (it != lookup.end()){
             return it->second;
         }
+    }
+
+    [[nodiscard]] static std::string getUnitTypeName(UnitType type) {
+        switch (type) {
+            case UnitType::None: return "None";
+            case UnitType::Warrior: return "Warrior";
+            case UnitType::Rider: return "Rider";
+            case UnitType::Archer: return "Archer";
+            case UnitType::Knight: return "Knight";
+            case UnitType::Defender: return "Defender";
+            case UnitType::Swordsman: return "Swordsman";
+            case UnitType::Priest: return "Priest";
+            case UnitType::Catapult: return "Catapult";
+            case UnitType::Giant: return "Giant";
+            case UnitType::Boat: return "Boat";
+            case UnitType::Scout: return "Scout";
+            case UnitType::Ram: return "Ram";
+            case UnitType::Squadron: return "Squadron";
+            case UnitType::Rampager: return "Rampager";
+            default: return "None";
+        }
+    }
+    [[nodiscard]] static UnitType getUnitTypeByName(const std::string& name) {
+        static const std::unordered_map<std::string, UnitType> map = {
+                {"None", UnitType::None}, {"Warrior", UnitType::Warrior}, {"Rider", UnitType::Rider},
+                {"Archer", UnitType::Archer}, {"Knight", UnitType::Knight}, {"Defender", UnitType::Defender},
+                {"Swordsman", UnitType::Swordsman}, {"Priest", UnitType::Priest}, {"Catapult", UnitType::Catapult},
+                {"Giant", UnitType::Giant}, {"Boat", UnitType::Boat}, {"Scout", UnitType::Scout},
+                {"Ram", UnitType::Ram}, {"Squadron", UnitType::Squadron}, {"Rampager", UnitType::Rampager}
+        };
+        auto it = map.find(name);
+        return it != map.end() ? it->second : UnitType::None;
+    }
+
+    [[nodiscard]] static std::string getResourceTypeName(ResourceType type) {
+        switch (type) {
+            case ResourceType::None: return "None";
+            case ResourceType::Forest: return "Forest";
+            case ResourceType::Fish: return "Fish";
+            case ResourceType::Mining: return "Mining";
+            case ResourceType::Farm: return "Farm";
+            case ResourceType::Animal: return "Animal";
+            case ResourceType::Fruit: return "Fruit";
+            default: return "None";
+        }
+    }
+    [[nodiscard]] static ResourceType getResourceTypeByName(const std::string& name) {
+        static const std::unordered_map<std::string, ResourceType> map = {
+                {"None", ResourceType::None}, {"Forest", ResourceType::Forest}, {"Fish", ResourceType::Fish},
+                {"Mining", ResourceType::Mining}, {"Farm", ResourceType::Farm}, {"Animal", ResourceType::Animal},
+                {"Fruit", ResourceType::Fruit}
+        };
+        auto it = map.find(name);
+        return it != map.end() ? it->second : ResourceType::None;
+    }
+
+    [[nodiscard]] static std::string getAchiveTypeName(AchiveType type) {
+        switch (type) {
+            case AchiveType::None: return "None";
+            case AchiveType::Killer: return "Killer";
+            case AchiveType::Trader: return "Trader";
+            case AchiveType::Explorer: return "Explorer";
+            case AchiveType::Peace: return "Peace";
+            case AchiveType::Improve: return "Improve";
+            case AchiveType::Economic: return "Economic";
+            case AchiveType::Wisdom: return "Wisdom";
+            default: return "None";
+        }
+    }
+    [[nodiscard]] static AchiveType getAchiveTypeByName(const std::string& name) {
+        static const std::unordered_map<std::string, AchiveType> map = {
+                {"None", AchiveType::None}, {"Killer", AchiveType::Killer}, {"Trader", AchiveType::Trader},
+                {"Explorer", AchiveType::Explorer}, {"Peace", AchiveType::Peace}, {"Improve", AchiveType::Improve},
+                {"Economic", AchiveType::Economic}, {"Wisdom", AchiveType::Wisdom}
+        };
+        auto it = map.find(name);
+        return it != map.end() ? it->second : AchiveType::None;
+    }
+
+    [[nodiscard]] static std::string getDefenceTypeName(DefenceType type) {
+        switch (type) {
+            case DefenceType::None: return "None";
+            case DefenceType::Forest: return "Forest";
+            case DefenceType::Mountain: return "Mountain";
+            case DefenceType::Water: return "Water";
+            default: return "None";
+        }
+    }
+    [[nodiscard]] static DefenceType getDefenceTypeByName(const std::string& name) {
+        static const std::unordered_map<std::string, DefenceType> map = {
+                {"None", DefenceType::None}, {"Forest", DefenceType::Forest},
+                {"Mountain", DefenceType::Mountain}, {"Water", DefenceType::Water}
+        };
+        auto it = map.find(name);
+        return it != map.end() ? it->second : DefenceType::None;
+    }
+
+    [[nodiscard]] static std::string getAbilityTypeName(AbilitiesType type) {
+        switch (type) {
+            case AbilitiesType::None: return "None";
+            case AbilitiesType::Destroying: return "Destroying";
+            case AbilitiesType::Disband: return "Disband";
+            case AbilitiesType::Cutting: return "Cutting";
+            case AbilitiesType::Growing: return "Growing";
+            case AbilitiesType::Literacy: return "Literacy";
+            case AbilitiesType::Burning: return "Burning";
+            case AbilitiesType::DeepFloating: return "DeepFloating";
+            case AbilitiesType::Climbing: return "Climbing";
+            case AbilitiesType::Floating: return "Floating";
+            default: return "None";
+        }
+    }
+    [[nodiscard]] static AbilitiesType getAbilityTypeByName(const std::string& name) {
+        static const std::unordered_map<std::string, AbilitiesType> map = {
+                {"None", AbilitiesType::None}, {"Destroying", AbilitiesType::Destroying}, {"Disband", AbilitiesType::Disband},
+                {"Cutting", AbilitiesType::Cutting}, {"Growing", AbilitiesType::Growing}, {"Literacy", AbilitiesType::Literacy},
+                {"Burning", AbilitiesType::Burning}, {"DeepFloating", AbilitiesType::DeepFloating}, {"Climbing", AbilitiesType::Climbing},
+                {"Floating", AbilitiesType::Floating}
+        };
+        auto it = map.find(name);
+        return it != map.end() ? it->second : AbilitiesType::None;
     }
 };
 

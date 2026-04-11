@@ -48,6 +48,9 @@ struct CityDBData {
     float defence_bonus;
 };
 
+class BasicTech;
+enum class TerrainTypes;
+
 class GameRepository {
 public:
     GameRepository();
@@ -91,22 +94,22 @@ public:
     bool updateUnit(int game_id, const std::shared_ptr<BasicUnit>& unit);
     bool deleteUnit(int game_id, int tribe_id, int x, int y);
 
-    int saveBuilding(int game_id, const std::unique_ptr<BasicBuilding>& building, int tile_id);
+    int saveBuilding(int game_id, const std::shared_ptr<BasicBuilding>& building, int tile_id);
     std::shared_ptr<BasicBuilding> loadBuilding(int game_id, int building_index);
-    std::vector<std::shared_ptr<BasicBuilding>> loadTileBuildings(int game_id);
     std::vector<std::shared_ptr<BasicBuilding>> loadCityBuildings(int game_id, int city_id);
     bool updateBuilding(int game_id, const std::shared_ptr<BasicBuilding>& building);
     bool deleteBuilding(int game_id, int building_index);
+    [[nodiscard]] std::vector<std::shared_ptr<BasicBuilding>> loadTileBuildings(int game_id, int tile_id, TerrainTypes type);
 
-    int saveResource(int game_id, const std::unique_ptr<BasicResource>& resource, int tile_id);
+    int saveResource(int game_id, const std::shared_ptr<BasicResource>& resource, int tile_id);
     std::shared_ptr<BasicResource> loadResource(int game_id, int resource_index);
-    std::vector<std::shared_ptr<BasicResource>> loadTileResources(int game_id);
+    std::vector<std::shared_ptr<BasicResource>> loadResources(int game_id, int resource_index);
     bool updateResource(int game_id, const std::shared_ptr<BasicResource>& resource);
     bool deleteResource(int game_id, int resource_index);
 
-    std::vector<int> loadTribeTechnologies(int game_id, int tribe_id);
+    std::vector<std::shared_ptr<BasicTech>> loadTribeTechnologies(int game_id, int tribe_id);
     bool saveTribeTechnology(int game_id, int tribe_id, int technology_id, bool is_known);
-    bool updateTribeTechnology(int game_id, int tribe_id, int technology_id, bool is_known);
+    std::shared_ptr<BasicTech> loadTechByIndex(int index);
 
     int saveAchievement(int game_id, int achievement_id, int tribe_id, const std::string& achive_type, int progress, bool completed);
     std::vector<int> loadTribeAchievements(int game_id, int tribe_id);
@@ -152,6 +155,8 @@ public:
     bool updatePlayerTribe(int game_id, int user_id, int tribe_id);
     [[nodiscard]] int getCityId(int game_id, int x, int y);
     bool updateTribeCapital(int game_id, int tribe_id, int capital_city_id);
+    void techImplacer();
+    [[nodiscard]] int loadTechFromList(std::shared_ptr<BasicTech> tech);
 private:
     struct PgConnDeleter {
         void operator()(pg_conn* conn) const noexcept;
@@ -173,5 +178,4 @@ private:
     void invalidateCache(int game_id);
     void logError(const std::string& context, const std::string& error) const;
     int getTileId(int game_id, int x, int y);
-
 };

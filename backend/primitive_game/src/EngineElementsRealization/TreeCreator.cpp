@@ -83,13 +83,13 @@ void TechTree::create() {
               "climbing", "mining", "smithery", "meditation", "philosophy");
 
     buildLine(*this, fishNode, scoutNode, squadNode, ramNode, aquaNode,
-              "climbing", "mining", "smithery", "meditation", "philosophy");
+              "fishing", "scout", "navigation", "ramming", "aquatism");
 
     buildLine(*this, huntNode, archerNode, spiritNode, forestNode, matNode,
-              "climbing", "mining", "smithery", "meditation", "philosophy");
+              "hunting", "archery", "spiritualism", "forestry", "mathematical");
 
     buildLine(*this, rideNode, roadNode, tradeNode, freeNode, knightNode,
-              "climbing", "mining", "smithery", "meditation", "philosophy");
+              "riding", "roads", "trading", "freeSpirit", "chivilary");
 
 }
 

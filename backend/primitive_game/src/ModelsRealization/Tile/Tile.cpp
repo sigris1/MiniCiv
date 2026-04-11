@@ -9,7 +9,7 @@
 #include "Models/Buildings/SpriteBuilding.h"
 #include "EngineElements/UnitsMover.h"
 
-void Tile::build(std::weak_ptr<Game> game, std::unique_ptr<BasicBuilding> newBuilding) {
+void Tile::build(std::weak_ptr<Game> game, std::shared_ptr<BasicBuilding> newBuilding) {
     auto curGame = game.lock();
     buildings.emplace_back(std::move(newBuilding));
     auto ownedCity = ownedBy.lock();

@@ -36,8 +36,9 @@ CREATE TYPE achive_type AS ENUM (
 CREATE TYPE defence_type AS ENUM ('None', 'Forest', 'Mountain', 'Water');
 
 CREATE TYPE abilities_type AS ENUM (
-    'None', 'FastBuilding', 'FastTech', 'ExtraResources', 'ExtraDefence', 'ExtraMorale', 'ExtraPopulation'
-);
+    'None', 'Destroying', 'Disband', 'Cutting', 'Growing',
+    'Literacy', 'Burning', 'DeepFloating', 'Climbing', 'Floating'
+    );
 
 CREATE TABLE games (
                        id SERIAL PRIMARY KEY,
@@ -162,8 +163,13 @@ CREATE TABLE technologies (
                               new_achive achive_type DEFAULT 'None',
                               new_defence defence_type DEFAULT 'None',
                               new_ability abilities_type DEFAULT 'None',
+                              new_building1 building_type DEFAULT 'None',
+                              new_building2 building_type DEFAULT 'None',
                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              name VARCHAR(50) NOT NULL DEFAULT '',
+                              tech_x INT NOT NULL DEFAULT 0,
+                              tech_y INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE technology_buildings (
