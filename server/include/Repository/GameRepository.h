@@ -157,6 +157,9 @@ public:
     bool updateTribeCapital(int game_id, int tribe_id, int capital_city_id);
     void techImplacer();
     [[nodiscard]] int loadTechFromList(std::shared_ptr<BasicTech> tech);
+    bool execute(const std::string& query) const;
+    int getTileId(int game_id, int x, int y);
+    std::shared_ptr<pg_result> fetchQuery(const std::string& query) const;
 private:
     struct PgConnDeleter {
         void operator()(pg_conn* conn) const noexcept;
@@ -171,11 +174,8 @@ private:
     std::atomic<int> last_game_id_;
     std::atomic<bool> in_transaction_;
 
-    bool execute(const std::string& query) const;
-    std::shared_ptr<pg_result> fetchQuery(const std::string& query) const;
     std::string escapeString(const std::string& str) const;
     void clearCache();
     void invalidateCache(int game_id);
     void logError(const std::string& context, const std::string& error) const;
-    int getTileId(int game_id, int x, int y);
 };

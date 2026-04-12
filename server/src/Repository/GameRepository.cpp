@@ -192,7 +192,6 @@ GameRepository::escapeString(const std::string& str) const {
 }
 
 void GameRepository::clearCache() {
-    std::lock_guard<std::mutex> lock(mutex_);
     cache_.clear();
 }
 
@@ -588,9 +587,11 @@ GameRepository::load(int game_id) {
     for (const auto& tribe : session->game->tribes) {
         if (!tribe) continue;
 
-        tribe->knownTechs.clear();
         auto loaded_techs = loadTribeTechnologies(game_id, tribe->tribeId);
-        tribe->knownTechs = std::move(loaded_techs);
+        for (auto tech : loaded_techs){
+            tribe->balance += tribe->revealTechCost(tech);
+            tribe->learnTech(tech);
+        }
     }
 
     cache_[game_id] = session;
@@ -755,7 +756,7 @@ int GameRepository::saveTile(int game_id, const std::shared_ptr<Tile>& tile, int
     std::ostringstream q;
     q << "INSERT INTO tiles (game_id, x, y, terrain_type, has_road, has_bridge, "
       << "owner_tribe_id, defence_modifier) VALUES ("
-      << game_id << ", " << x << ", " << y << ", '"
+      << game_id << ", " << y << ", " << x << ", '"
       << escapeString(terrain) << "', "
       << (tile->hasRoad ? "TRUE" : "FALSE") << ", "
       << (tile->hasBridge ? "TRUE" : "FALSE") << ", "
@@ -1652,7 +1653,7 @@ std::vector<std::shared_ptr<BasicResource>> GameRepository::loadResources(int ga
     if (!isConnected()) return out;
 
     std::ostringstream q;
-    q << "SELECT building_type FROM building WHERE "
+    q << "SELECT building_type FROM buildings WHERE "
       << "game_id = " << game_id << " AND tile_id = " << tile_id;
 
     auto res = fetchQuery(q.str());

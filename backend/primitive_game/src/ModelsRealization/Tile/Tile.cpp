@@ -44,9 +44,6 @@ void Tile::tryToBuildSprite(ResourceType resType) {
 }
 
 void Tile::collectResource(std::weak_ptr<Game> game, ResourceType resType) {
-    if (ownedBy.expired()){
-        throw  std::logic_error("Resource is non owned");
-    }
     for (auto it = resources.begin(); it != resources.end(); ++it) {
         if ((*it)->getType() == resType) {
             if (auto curCity = this->ownedBy.lock()) {

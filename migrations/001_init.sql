@@ -182,12 +182,12 @@ CREATE TABLE tribe_technologies (
                                     id SERIAL PRIMARY KEY,
                                     game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
                                     tribe_id INTEGER NOT NULL,
-                                    technology_id INTEGER NOT NULL REFERENCES technologies(id) ON DELETE CASCADE,
+                                    technology_id INTEGER NOT NULL REFERENCES technologies(id),
                                     is_known BOOLEAN DEFAULT FALSE,
                                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                     UNIQUE(game_id, tribe_id, technology_id),
-                                    FOREIGN KEY (game_id, tribe_id) REFERENCES tribes(game_id, tribe_id) ON DELETE CASCADE
+                                    FOREIGN KEY (game_id, tribe_id) REFERENCES tribes(game_id, tribe_id)
 );
 
 CREATE TABLE achievements (

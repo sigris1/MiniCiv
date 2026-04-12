@@ -18,8 +18,8 @@ void City::getStartTerritory(){
     auto tile = mainTile.lock();
     auto map = gameMap.lock();
 
-    int startX = tile->x;
-    int startY = tile->y;
+    int startY = tile->x;
+    int startX = tile->y;
 
     int size = map->tileMap.size();
 

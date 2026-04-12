@@ -39,3 +39,6 @@ add_executable(miniciv_server
 target_link_libraries(miniciv_server PRIVATE
         server_lib
 )
+
+
+add_subdirectory(tests)

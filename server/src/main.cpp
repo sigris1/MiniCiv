@@ -80,7 +80,7 @@ int main() {
         std::cerr << "Failed to connect to PostgreSQL\n";
         return 1;
     }
-    manager->getRepository().techImplacer();
+//    manager->getRepository().techImplacer();
     std::cout << "Connected to PostgreSQL\n";
 
     const std::string address = "0.0.0.0";
