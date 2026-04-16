@@ -97,13 +97,11 @@ void GameClient::endTurn() {
 
 void GameClient::startPolling(int intervalMs) {
     if (m_pollTimer.isActive()) return;
-
-    m_pollIntervalMs = intervalMs;
-    qDebug() << "[Client] Starting Polling (initial:" << m_pollIntervalMs << "ms)";
-
+    qDebug() << "[Client] Starting Polling (interval:" << intervalMs << "ms)";
     connect(&m_pollTimer, &QTimer::timeout, this, &GameClient::pollState, Qt::UniqueConnection);
-    m_pollTimer.setInterval(m_pollIntervalMs);
+    m_pollTimer.setInterval(intervalMs);
     m_pollTimer.start();
+    fetchGameState(); // Первый запрос сразу
 }
 
 void GameClient::stopPolling() { m_pollTimer.stop(); }
@@ -125,34 +123,13 @@ void GameClient::reconnect() {
 
 void GameClient::fetchGameState() {
     if (m_gameId <= 0 || m_token.isEmpty()) return;
-
-    if (m_pendingRequests >= MAX_PENDING) {
-        qDebug() << "[Client] Backlog full (" << m_pendingRequests
-                 << "), skipping state fetch";
-        return;
-    }
-
     QUrl url(QString("http://%1:%2/api/games/%3/state")
                      .arg(m_host).arg(m_port).arg(m_gameId));
     QNetworkRequest request(url);
     request.setRawHeader("Authorization", ("Bearer " + m_token).toUtf8());
-
-    auto reply = m_network->get(request);
-
-    m_pendingRequests++;
-    qDebug() << "[Client] Request sent. Pending:" << m_pendingRequests;
-
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        reply->deleteLater();
-        m_pendingRequests--;
-        qDebug() << "[Client] Request done. Pending:" << m_pendingRequests;
-
-        if (m_pendingRequests < MAX_PENDING / 2 && m_pollTimer.isActive()) {
-            qDebug() << "[Client] Backlog cleared, fetching fresh state...";
-            fetchGameState();
-        }
-    });
+    m_network->get(request);
 }
+
 void GameClient::pollState() { fetchGameState(); }
 
 void GameClient::post(const QString& endpoint, const QJsonObject& body) {
