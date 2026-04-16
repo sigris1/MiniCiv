@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file alias="main.qml">main.qml</file>
+        <file alias="LoginDialog.qml">LoginDialog.qml</file>
+        <file alias="GameSelectionDialog.qml">GameSelectionDialog.qml</file>
+        <file alias="NationSelectionDialog.qml">NationSelectionDialog.qml</file>
+    </qresource>
+</RCC>

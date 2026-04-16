@@ -17,6 +17,8 @@
 #include <unordered_map>
 #include <functional>
 #include <nlohmann/json.hpp>
+#include <boost/beast/http/string_body.hpp>
+#include <boost/beast/http/message_fwd.hpp>
 #include "gameSession/GameSessionManager.h"
 #include "Actions/Action.h"
 #include "EngineElements/ActionRouter.h"
@@ -27,6 +29,9 @@ public:
 
     void start();
 
+    void sendStateUpdateNotification();
+    void sendPollWakeUp();
+    void sendDeferredStateResponse(const nlohmann::json& stateJson);
 private:
     void do_read();
     void on_read(boost::beast::error_code ec);
@@ -63,6 +68,18 @@ private:
     boost::beast::flat_buffer buffer_;
     boost::beast::http::request<boost::beast::http::string_body> request_;
     boost::beast::http::response<boost::beast::http::string_body> response_;
+    struct PendingPoll {
+        std::shared_ptr<HttpSession> self;
+        boost::beast::http::request<boost::beast::http::string_body> request;
+
+        PendingPoll(std::shared_ptr<HttpSession> s,
+                    boost::beast::http::request<boost::beast::http::string_body> r)
+                : self(std::move(s)), request(std::move(r)) {}
+    };
+    std::vector<PendingPoll> m_pendingPolls;
+
+    void notifyStateChange();
+    nlohmann::json buildStateJsonForPlayer(int user_id, int game_id);
 };
 
 class HttpServer {
