@@ -3,12 +3,17 @@
 //
 
 #include "Models/Game/Game.h"
+#include <iostream>
 
-Game::Game(int size):
+Game::Game(int size, bool skip_map_generation):
     mapSize(size)
 {
     tileMap = std::make_shared<Map>(mapSize);
-    tileMap->generateMap();
+    if (!skip_map_generation) {
+        tileMap->generateMap();
+    } else {
+        tileMap->initializeEmptyMap();
+    }
 }
 
 bool Game::isFinished() {

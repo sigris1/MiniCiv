@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:14
+    container_name: miniciv-postgres
+    environment:
+      POSTGRES_USER: sigris
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: miniciv
+    ports:
+      - "5435:5432"
+    volumes:
+      - miniciv-pg-data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sigris -d miniciv"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  miniciv-pg-data:

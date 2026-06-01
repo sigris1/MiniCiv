@@ -39,7 +39,7 @@ public:
         else if (std::any_of(availableTiles.first.begin(), availableTiles.first.end(),
                              [&tile](const auto& curTile) { return curTile == tile; })) {
 
-            auto oldTile = gamePtr->getTile(unit->x, unit->y).lock();
+            auto oldTile = gamePtr->getTile(unit->y, unit->x).lock();
             if (oldTile) {
                 oldTile->unit.reset();
             }
@@ -60,8 +60,8 @@ public:
         std::vector<std::shared_ptr<Tile>> available;
         std::vector<std::shared_ptr<Tile>> availableViaFight;
 
-        int startX = unit->x;
-        int startY = unit->y;
+        int startX = unit->y;
+        int startY = unit->x;
         int baseMovement = unit->movement;
 
         auto gamePtr = game.lock();

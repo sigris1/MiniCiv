@@ -16,5 +16,6 @@ public:
     std::vector<std::vector<std::shared_ptr<Tile>>> tileMap;
     std::vector<std::shared_ptr<City>> cities;
     void generateMap();
+    void initializeEmptyMap();
     std::weak_ptr<Tile> getTile(int x, int y);
 };

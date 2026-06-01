@@ -9,7 +9,7 @@
 #include "Models/Buildings/SpriteBuilding.h"
 #include "EngineElements/UnitsMover.h"
 
-void Tile::build(std::weak_ptr<Game> game, std::unique_ptr<BasicBuilding> newBuilding) {
+void Tile::build(std::weak_ptr<Game> game, std::shared_ptr<BasicBuilding> newBuilding) {
     auto curGame = game.lock();
     buildings.emplace_back(std::move(newBuilding));
     auto ownedCity = ownedBy.lock();
@@ -44,9 +44,6 @@ void Tile::tryToBuildSprite(ResourceType resType) {
 }
 
 void Tile::collectResource(std::weak_ptr<Game> game, ResourceType resType) {
-    if (ownedBy.expired()){
-        throw  std::logic_error("Resource is non owned");
-    }
     for (auto it = resources.begin(); it != resources.end(); ++it) {
         if ((*it)->getType() == resType) {
             if (auto curCity = this->ownedBy.lock()) {
@@ -62,7 +59,7 @@ void Tile::collectResource(std::weak_ptr<Game> game, ResourceType resType) {
 }
 
 void Tile::emplaceUnit(std::shared_ptr<BasicUnit> newUnit) {
-    if (!unit.expired()){
+    if (unit.expired()){
         newUnit->x = this->x;
         newUnit->y = this->y;
         unit = newUnit;

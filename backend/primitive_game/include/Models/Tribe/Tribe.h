@@ -29,7 +29,7 @@ public:
     std::vector<std::weak_ptr<City>> cities;
     std::vector<std::shared_ptr<BasicUnit>> units;
     std::weak_ptr<City> capital;
-    std::vector<std::weak_ptr<BasicTech>> knownTechs;
+    std::vector<std::shared_ptr<BasicTech>> knownTechs;
     std::vector<BuildingType> availableBuildings;
     std::vector<DefenceType> availableDefences;
     std::vector<UnitType> availableUnits = {UnitType::Warrior};
@@ -54,6 +54,7 @@ public:
     int revealTechCost(std::weak_ptr<BasicTech> tech);
     void endTurn();
     std::vector<std::unique_ptr<AchivementBuilding>> getAchiveBuildings();
+    int capitalCityId_ = -1;
 private:
     void applyTech(const std::shared_ptr<BasicTech>& tech);
 };

@@ -21,8 +21,8 @@ public:
     int x;
     int y;
     std::weak_ptr<BasicUnit> unit;
-    std::vector<std::unique_ptr<BasicResource>> resources;
-    std::vector<std::unique_ptr<BasicBuilding>> buildings;
+    std::vector<std::shared_ptr<BasicResource>> resources;
+    std::vector<std::shared_ptr<BasicBuilding>> buildings;
     TerrainTypes type;
     bool hasRoad = false;
     bool hasBridge = false;
@@ -32,7 +32,7 @@ public:
     std::weak_ptr<City> ownedBy;
     Tile(int X, int Y, TerrainTypes type);
     Tile(const Tile& tile);
-    void build(std::weak_ptr<Game> game, std::unique_ptr<BasicBuilding> newBuilding);
+    void build(std::weak_ptr<Game> game, std::shared_ptr<BasicBuilding> newBuilding);
     void emplaceUnit(std::shared_ptr<BasicUnit> unit);
     void specialEmplaceUnit(std::weak_ptr<Game> game, std::shared_ptr<BasicUnit> unit);
     void collectResource(std::weak_ptr<Game> game, ResourceType type);
