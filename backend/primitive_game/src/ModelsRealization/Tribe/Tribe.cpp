@@ -235,8 +235,8 @@ void Tribe::moveUnit(std::weak_ptr<Game> game, const std::shared_ptr<BasicUnit>&
 void Tribe::recruitUnit(const std::weak_ptr<City>& place, UnitType unitType) {
     auto curCity = place.lock();
     auto newUnit = TypeMatcher::getUnitByUnitType(unitType, tribeId);
-    newUnit->x = curCity->mainTile.lock()->x;
-    newUnit->y = curCity->mainTile.lock()->y;
+    newUnit->y = curCity->mainTile.lock()->x;
+    newUnit->x = curCity->mainTile.lock()->y;
 
     if (curCity->tribeId != tribeId) {
         throw std::logic_error("You cannot recruit unit in non-owned city");

@@ -8,6 +8,8 @@
 #include "User/User.h"
 #include "EngineElements/ActionRealizer.h"
 #include "EngineElements/ActionRouter.h"
+#include "server/http_server.h"
+#include "EngineElements/IndexDisposer.h"
 
 GameSession::GameSession(int id, int size, bool skip_map_generation) :
     gameId(id),
@@ -20,7 +22,10 @@ GameSession::GameSession(int id, int size, bool skip_map_generation) :
 void GameSession::endTurn() {
     std::lock_guard<std::mutex> lock(mutex_);
     game->tribes[currentPlayer_]->endTurn();
-    currentPlayer_ = (currentPlayer_ + 1) % (playersCount_ + botsCount_);
+    currentPlayer_ = (currentPlayer_ + 1) % (game->tribes.size());
+    if (currentPlayer_ == 1) {
+        currentPlayer_++;
+    }
 }
 
 int GameSession::revealWinner() {
@@ -78,6 +83,7 @@ void GameSession::confirmPlayer(int id) {
     std::lock_guard<std::mutex> lock(mutex_);
     confirmedPlayers.insert(id);
 }
+
 void GameSession::confirmStart() {
     std::lock_guard<std::mutex> lock(mutex_);
     if (confirmedPlayers.size() == playersCount_){

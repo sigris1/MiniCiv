@@ -784,5 +784,61 @@ public:
         auto it = map.find(name);
         return it != map.end() ? it->second : AbilitiesType::None;
     }
+
+    [[nodiscard]] static UnitType getUnitTypeByStats(
+            int cost, float damage, float defence,
+            int movement, int attackRange,
+            UnitMovementType moveType, UnitAttackType attackType)
+    {
+        if (moveType == UnitMovementType::Aquatic) {
+            if (cost == 0  && damage == 0.0f && defence == 1 && movement == 2 && attackRange == 2 && attackType == UnitAttackType::Peaceful)
+                return UnitType::Boat;
+            if (cost == 5  && damage == 2.0f && defence == 1 && movement == 3 && attackRange == 2 && attackType == UnitAttackType::Ranged)
+                return UnitType::Scout;
+            if (cost == 5  && damage == 3.0f && defence == 3 && movement == 3 && attackRange == 1 && attackType == UnitAttackType::Melee)
+                return UnitType::Ram;
+            if (cost == 15 && damage == 3.0f && defence == 2 && movement == 2 && attackRange == 3 && attackType == UnitAttackType::Splash)
+                return UnitType::Squadron;
+            if (cost == 0  && damage == 4.0f && defence == 4 && movement == 2 && attackRange == 1 && attackType == UnitAttackType::Melee)
+                return UnitType::Rampager;
+            return UnitType::None;
+        }
+
+        if (moveType == UnitMovementType::Overland) {
+            if (cost == 2 && damage == 2.0f && defence == 2 && movement == 1 && attackRange == 1 && attackType == UnitAttackType::Melee)
+                return UnitType::Warrior;
+            if (cost == 3 && damage == 2.0f && defence == 1 && movement == 2 && attackRange == 1 && attackType == UnitAttackType::Melee)
+                return UnitType::Rider;
+            if (cost == 8 && damage == 3.5f && defence == 1 && movement == 3 && attackRange == 1 && attackType == UnitAttackType::Melee)
+                return UnitType::Knight;
+            if (cost == 3 && damage == 1.0f && defence == 3 && movement == 1 && attackRange == 1 && attackType == UnitAttackType::Melee)
+                return UnitType::Defender;
+            if (cost == 5 && damage == 3.0f && defence == 3 && movement == 1 && attackRange == 1 && attackType == UnitAttackType::Melee)
+                return UnitType::Swordsman;
+            if (cost == 5 && damage == 0.0f && defence == 1 && movement == 1 && attackRange == 1 && attackType == UnitAttackType::Enticement)
+                return UnitType::Priest;
+            if (cost == 3 && damage == 2.0f && defence == 1 && movement == 1 && attackRange == 2 && attackType == UnitAttackType::Ranged)
+                return UnitType::Archer;
+            if (cost == 8 && damage == 4.0f && defence == 0 && movement == 1 && attackRange == 3 && attackType == UnitAttackType::Ranged)
+                return UnitType::Catapult;
+            if (cost == 0 && damage == 5.0f && defence == 4 && movement == 1 && attackRange == 1 && attackType == UnitAttackType::Melee)
+                return UnitType::Giant;
+            return UnitType::None;
+        }
+
+        return UnitType::None;
+    }
+
+    [[nodiscard]] static UnitType getUnitTypeByInstance(const BasicUnit& unit) {
+        return getUnitTypeByStats(
+                unit.cost,
+                unit.damage,
+                unit.defence,
+                unit.movement,
+                unit.attackRange,
+                unit.movementType,
+                unit.attackType
+        );
+    }
 };
 

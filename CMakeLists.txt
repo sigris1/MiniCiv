@@ -9,6 +9,7 @@ option(BUILD_TESTING "Build tests" OFF)
 
 add_subdirectory(backend)
 add_subdirectory(server)
+add_subdirectory(frontend)
 
 enable_testing()
 

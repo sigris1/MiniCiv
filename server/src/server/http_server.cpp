@@ -497,7 +497,6 @@ void HttpSession::handle_game_start() {
     });
 }
 
-
 void HttpSession::handle_tribe_select() {
     const auto user_id = extractUserId();
     if (!user_id) {
@@ -523,6 +522,23 @@ void HttpSession::handle_tribe_select() {
     }
 
     auto& repo = manager->getRepository();
+
+    int existing_tribe_id = repo.getPlayerTribe(game_id, *user_id);
+    if (existing_tribe_id > 0) {
+        send_json(http::status::ok, {
+                {"status", "already_in_game"},
+                {"game_id", game_id},
+                {"tribe_id", existing_tribe_id},
+                {"user_id", *user_id}
+        });
+        return;
+    }
+
+    if (!repo.addPlayerToGame(game_id, *user_id)) {
+        send_error(http::status::internal_server_error, "failed_to_join_game");
+        return;
+    }
+
     auto player_opt = repo.loadPlayerById(*user_id);
     if (!player_opt) {
         send_error(http::status::not_found, "player_not_found");
@@ -534,7 +550,9 @@ void HttpSession::handle_tribe_select() {
     if (is_random) {
         std::uniform_int_distribution<> nation_dist(0, 11);
         int rand_index = nation_dist(session->rng_);
-        selected_type = IndexDisposer::getNationTypeByName(IndexDisposer::getNationTypeName(rand_index));
+        selected_type = IndexDisposer::getNationTypeByName(
+                IndexDisposer::getNationTypeName(rand_index)
+        );
     }
     else if (!nation_type.empty()) {
         selected_type = IndexDisposer::getNationTypeByName(nation_type);
@@ -553,7 +571,8 @@ void HttpSession::handle_tribe_select() {
         }
     }
     tribe->tribeId = next_tribe_id;
-
+    tribe->balance = 25;
+    session->confirmPlayer(*user_id);
     session->game->tribes.push_back(tribe);
 
     if (!session->game->tileMap->cities.empty()) {
@@ -567,57 +586,52 @@ void HttpSession::handle_tribe_select() {
 
         while (attempts < 100 && !selected_city) {
             int capital_idx = capital_dist(session->rng_);
-
             if (capital_idx < 0 || capital_idx >= static_cast<int>(session->game->tileMap->cities.size())) {
-                ++attempts;
-                continue;
+                ++attempts; continue;
             }
-
             auto city = session->game->tileMap->cities[capital_idx];
-            if (!city) {
-                ++attempts;
-                continue;
-            }
-
-            if (city->tribeId != -1) {
-                ++attempts;
-                continue;
-            }
+            if (!city) { ++attempts; continue; }
+            if (city->tribeId != -1) { ++attempts; continue; }
 
             bool is_others_capital = false;
             for (const auto& other_tribe : session->game->tribes) {
-                if (!other_tribe || other_tribe == tribe) {
-                    continue;
-                }
-
+                if (!other_tribe || other_tribe == tribe) continue;
                 if (auto cap = other_tribe->capital.lock()) {
-                    if (cap == city) {
-                        is_others_capital = true;
-                        break;
-                    }
+                    if (cap == city) { is_others_capital = true; break; }
                 }
             }
-            if (is_others_capital) {
-                ++attempts;
-                continue;
-            }
-
+            if (is_others_capital) { ++attempts; continue; }
             selected_city = city;
         }
 
         if (selected_city) {
             selected_city->tribeId = tribe->tribeId;
             selected_city->gameMap = session->game->tileMap;
-
             tribe->addCity(selected_city);
             tribe->capital = selected_city;
-
         } else {
-            std::cerr << "[TribeSelect]  No free city found after 100 attempts\n";
+            std::cerr << "[TribeSelect] No free city found after 100 attempts\n";
         }
     }
 
-    repo.updatePlayerTribe(game_id, *user_id, tribe->tribeId);
+    {
+        repo.beginTransaction();
+
+        if (!repo.setPlayerTribe(game_id, *user_id, tribe->tribeId)) {
+            repo.rollbackTransaction();
+            send_error(http::status::internal_server_error, "failed_to_save_tribe");
+            return;
+        }
+
+        repo.setPlayerReady(game_id, *user_id, true);
+
+        repo.updatePlayerLastActivity(game_id, *user_id);
+
+        if (!repo.commitTransaction()) {
+            send_error(http::status::internal_server_error, "transaction_failed");
+            return;
+        }
+    }
 
     manager->storeSession(session);
 
@@ -626,12 +640,16 @@ void HttpSession::handle_tribe_select() {
             {"game_id", game_id},
             {"tribe_id", tribe->tribeId},
             {"nation_type", IndexDisposer::getNationTypeName(tribe->type)},
-            {"is_random", is_random}
+            {"is_random", is_random},
+            {"is_ready", true},
+            {"user_id", *user_id}
     });
 }
 
-
 void HttpSession::handle_game_state() {
+    std::cout << "[DEBUG] Auth header received: '"
+              << request_[http::field::authorization] << "'\n";
+
     const auto user_id = extractUserId();
     if (!user_id) {
         send_error(http::status::unauthorized, "unauthorized");
@@ -652,14 +670,154 @@ void HttpSession::handle_game_state() {
         return;
     }
 
-    send_json(http::status::ok, {
+    auto& repo = manager->getRepository();
+
+    if (!repo.isPlayerInGame(game_id, *user_id)) {
+        send_error(http::status::forbidden, "not_a_member_of_this_game");
+        return;
+    }
+
+    int current_player = session->getCurrentPlayer();
+    std::string current_hash = std::to_string(current_player) + "_" +
+                               std::to_string(session->game->tribes.size());
+
+    int player_tribe_id = repo.getPlayerTribe(game_id, *user_id);
+
+    std::vector<std::string> available_units;
+
+    if (player_tribe_id > 0) {
+        available_units.push_back("Warrior");
+
+        auto known_techs = repo.loadTribeTechnologies(game_id, player_tribe_id);
+
+        for (const auto& tech : known_techs) {
+            if (!tech) continue;
+
+            switch (tech->newUnit) {
+                case UnitType::Archer:
+                    available_units.push_back("Archer");
+                    break;
+                case UnitType::Rider:
+                    available_units.push_back("Rider");
+                    break;
+                case UnitType::Knight:
+                    available_units.push_back("Knight");
+                    break;
+                case UnitType::Defender:
+                    available_units.push_back("Defender");
+                    break;
+                case UnitType::Swordsman:
+                    available_units.push_back("Swordsman");
+                    break;
+                case UnitType::Priest:
+                    available_units.push_back("Priest");
+                    break;
+                case UnitType::Catapult:
+                    available_units.push_back("Catapult");
+                    break;
+                case UnitType::Giant:
+                    available_units.push_back("Giant");
+                    break;
+                case UnitType::Warrior:
+                default:
+                    break;
+            }
+        }
+
+        std::sort(available_units.begin(), available_units.end());
+        available_units.erase(std::unique(available_units.begin(), available_units.end()), available_units.end());
+    }
+
+    nlohmann::json response = {
             {"game_id", session->gameId},
             {"status", session->isGameEnded() ? "finished" :
                        (session->isGameStarted() ? "playing" : "waiting")},
             {"current_player", session->getCurrentPlayer()},
             {"map_size", session->game->mapSize},
             {"players_count", session->getPlayersCount()}
-    });
+    };
+
+    if (player_tribe_id > 0) {
+        response["tribe_id"] = player_tribe_id;
+    }
+
+    response["available_units"] = available_units;
+
+    int balance = 0;
+    for (const auto& tribe : session->game->tribes) {
+        if (tribe && tribe->tribeId == player_tribe_id) {
+            balance = tribe->balance;
+            break;
+        }
+    }
+    response["balance"] = balance;
+
+    nlohmann::json tiles_array = nlohmann::json::array();
+    for (int x = 0; x < session->game->mapSize; ++x) {
+        for (int y = 0; y < session->game->mapSize; ++y) {
+            auto tw = session->game->getTile(x, y);
+            if (auto tile = tw.lock()) {
+                nlohmann::json tile_json = {
+                        {"x", x},
+                        {"y", y},
+                        {"terrain", IndexDisposer::getTerrainTypeName(tile->type)},
+                        {"owner", tile->ownerTribeId}
+                };
+
+                if (!tile->resources.empty()) {
+                    nlohmann::json res_array = nlohmann::json::array();
+                    for (const auto& res : tile->resources) {
+                        if (res) {
+                            res_array.push_back(IndexDisposer::getResourceTypeName(res->getType()));
+                        }
+                    }
+                    tile_json["resources"] = res_array;
+                }
+
+                if (!tile->city.expired()) {
+                    auto c = tile->city.lock();
+                    tile_json["hasCity"] = true;
+                    tile_json["cityOwner"] = c->tribeId;
+                } else {
+                    tile_json["hasCity"] = false;
+                }
+
+                if (!tile->unit.expired()) {
+                    auto u = tile->unit.lock();
+                    UnitType type = IndexDisposer::getUnitTypeByInstance(*u);
+                    tile_json["hasUnit"] = true;
+                    tile_json["unitType"] = IndexDisposer::getUnitTypeName(type);
+                    tile_json["unitTribe"] = u->tribeId;
+                } else {
+                    tile_json["hasUnit"] = false;
+                }
+
+                tiles_array.push_back(tile_json);
+            }
+        }
+    }
+    response["tiles"] = tiles_array;
+
+    nlohmann::json units_array = nlohmann::json::array();
+    for (const auto& tribe : session->game->tribes) {
+        if (!tribe) continue;
+        for (const auto& unit : tribe->units) {
+            if (!unit) continue;
+            UnitType type = IndexDisposer::getUnitTypeByInstance(*unit);
+            units_array.push_back({
+                                          {"x", unit->x},
+                                          {"y", unit->y},
+                                          {"type", IndexDisposer::getUnitTypeName(type)},
+                                          {"tribe", unit->tribeId},
+                                          {"health", unit->health},
+                                          {"movement", unit->movement},
+                                          {"attackRange", unit->attackRange}
+                                  });
+        }
+    }
+    response["units"] = units_array;
+
+    send_json(http::status::ok, response);
 }
 
 
@@ -709,4 +867,79 @@ void HttpSession::handle_game_action() {
             {"game_id", game_id},
             {"current_player", session->getCurrentPlayer()}
     });
+}
+
+void HttpSession::notifyStateChange() {
+    if (m_pendingPolls.empty()) {
+        return;
+    }
+
+
+    using namespace boost::beast;
+
+    for (size_t i = 0; i < m_pendingPolls.size(); ++i) {
+        auto& pending = m_pendingPolls[i];
+
+        http::response<http::string_body> res;
+        res.result(http::status::no_content);
+        res.version(11);
+        res.prepare_payload();
+
+        http::async_write(pending.self->socket_, std::move(res),
+                          [self = pending.self, idx = i+1](error_code ec, std::size_t) {
+
+                          });
+    }
+    m_pendingPolls.clear();
+}
+
+void HttpSession::sendStateUpdateNotification() {
+    using namespace boost::beast;
+
+    http::response<http::string_body> res;
+    res.result(http::status::no_content);  // 204
+    res.version(11);
+    res.prepare_payload();
+
+    http::async_write(socket_, std::move(res),
+                      [self = shared_from_this()](error_code ec, std::size_t) {
+
+                      });
+}
+
+
+void HttpSession::sendPollWakeUp() {
+    using namespace boost::beast;
+
+    http::response<http::string_body> res;
+    res.result(http::status::no_content);
+    res.version(11);
+    res.prepare_payload();
+
+    http::async_write(
+            socket_,
+            std::move(res),
+            [self = shared_from_this()](error_code ec, std::size_t) {
+            }
+    );
+}
+
+void HttpSession::sendDeferredStateResponse(const nlohmann::json& stateJson) {
+    using namespace boost::beast;
+
+    http::response<http::string_body> res;
+    res.result(http::status::ok);
+    res.version(11);
+    res.set(http::field::content_type, "application/json");
+    res.set(http::field::cache_control, "no-cache");
+
+    res.body() = stateJson.dump();
+    res.prepare_payload();
+
+    http::async_write(
+            socket_,
+            std::move(res),
+            [self = shared_from_this()](error_code ec, std::size_t) {
+            }
+    );
 }

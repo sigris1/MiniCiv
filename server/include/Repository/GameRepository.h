@@ -160,6 +160,20 @@ public:
     bool execute(const std::string& query) const;
     int getTileId(int game_id, int x, int y);
     std::shared_ptr<pg_result> fetchQuery(const std::string& query) const;
+
+    bool addPlayerToGame(int game_id, int user_id);
+    bool isPlayerInGame(int game_id, int user_id) const;
+    bool removePlayerFromGame(int game_id, int user_id);
+    std::vector<int> getGamePlayers(int game_id) const;
+    int getGamePlayerCount(int game_id) const;
+    bool setPlayerTribe(int game_id, int user_id, int tribe_id);
+    int getPlayerTribe(int game_id, int user_id) const;
+    bool isPlayerTribeConfirmed(int game_id, int user_id) const;
+    bool setPlayerReady(int game_id, int user_id, bool is_ready);
+    bool isPlayerReady(int game_id, int user_id) const;
+    std::vector<int> getReadyPlayers(int game_id) const;
+    std::optional<std::string> getPlayerJoinedAt(int game_id, int user_id) const;
+    bool updatePlayerLastActivity(int game_id, int user_id);
 private:
     struct PgConnDeleter {
         void operator()(pg_conn* conn) const noexcept;

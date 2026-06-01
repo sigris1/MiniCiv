@@ -14,6 +14,7 @@ class Action;
 class User;
 class ActionRouter;
 class GameRepository;
+class HttpSession;
 
 class GameSession : public std::enable_shared_from_this<GameSession> {
 public:
@@ -37,8 +38,16 @@ public:
     std::shared_ptr<Game> game;
     std::mt19937 rng_;
     int currentPlayer_ = 1;
-private:
+    struct WaitingClient {
+        std::weak_ptr<HttpSession> session;
+        std::string user_id;
+        bool wantsFullResponse = true;
+    };
+    std::vector<WaitingClient> m_waitingForUpdate;
+
+    void notifyWaitingClients();
     mutable std::mutex mutex_;
+private:
     int playersCount_;
     int botsCount_;
     std::unordered_set<int> confirmedPlayers;

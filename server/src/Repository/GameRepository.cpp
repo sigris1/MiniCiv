@@ -161,24 +161,24 @@ bool GameRepository::rollbackTransaction() {
     return ok;
 }
 
-[[nodiscard]] std::shared_ptr<pg_result>
-GameRepository::fetchQuery(const std::string& query) const {
-    if (!conn_) {
-        logError("fetchQuery", "Not connected");
+std::shared_ptr<pg_result> GameRepository::fetchQuery(const std::string& query) const {
+    if (!isConnected()) return nullptr;
+
+    auto res = std::shared_ptr<pg_result>(
+            PQexec(conn_.get(), query.c_str()),
+            [](pg_result* r) { PQclear(r); }
+    );
+
+    if (!res) {
         return nullptr;
     }
 
-    PGresult* res = PQexec(conn_.get(), query.c_str());
-    if (!res || PQresultStatus(res) != PGRES_TUPLES_OK) {
-        if (res) {
-            logError("fetchQuery", PQresultErrorMessage(res));
-            PQclear(res);
-        }
+    ExecStatusType status = PQresultStatus(res.get());
+    if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
         return nullptr;
     }
-    return {res, PQclear};
+    return res;
 }
-
 [[nodiscard]] std::string
 GameRepository::escapeString(const std::string& str) const {
     if (!conn_) {
@@ -201,7 +201,12 @@ void GameRepository::invalidateCache(int game_id) {
 }
 
 void GameRepository::logError(const std::string& context, const std::string& error) const {
-    std::cerr << "[GameRepository::" << context << "] ERROR: " << error << "\n";
+    if (conn_ && PQstatus(conn_.get()) == CONNECTION_OK) {
+        const char* pg_err = PQerrorMessage(conn_.get());
+        if (pg_err && std::strlen(pg_err) > 0) {
+            return;
+        }
+    }
 }
 
 
@@ -1665,4 +1670,195 @@ std::vector<std::shared_ptr<BasicResource>> GameRepository::loadResources(int ga
         out.push_back(std::move(bld_obj));
     }
     return out;
+}
+
+bool GameRepository::addPlayerToGame(int game_id, int user_id) {
+    if (!isConnected()) return false;
+
+    std::ostringstream query;
+    query << "INSERT INTO game_players (game_id, user_id, is_ready) "
+          << "VALUES (" << game_id << ", " << user_id << ", FALSE) "
+          << "ON CONFLICT (game_id, user_id) DO NOTHING";
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_COMMAND_OK) {
+        logError("addPlayerToGame", PQerrorMessage(conn_.get()));
+        return false;
+    }
+
+    return true;
+}
+
+bool GameRepository::isPlayerInGame(int game_id, int user_id) const {
+    if (!isConnected()) return false;
+
+    std::ostringstream query;
+    query << "SELECT 1 FROM game_players WHERE game_id = " << game_id
+          << " AND user_id = " << user_id << " LIMIT 1";
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_TUPLES_OK) return false;
+
+    return PQntuples(res.get()) > 0;
+}
+
+bool GameRepository::removePlayerFromGame(int game_id, int user_id) {
+    if (!isConnected()) return false;
+
+    std::ostringstream query;
+    query << "DELETE FROM game_players WHERE game_id = " << game_id
+          << " AND user_id = " << user_id;
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_COMMAND_OK) {
+        logError("removePlayerFromGame", PQerrorMessage(conn_.get()));
+        return false;
+    }
+    return true;
+}
+
+std::vector<int> GameRepository::getGamePlayers(int game_id) const {
+    std::vector<int> players;
+    if (!isConnected()) return players;
+
+    std::ostringstream query;
+    query << "SELECT user_id FROM game_players WHERE game_id = " << game_id
+          << " ORDER BY joined_at";
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_TUPLES_OK) return players;
+
+    for (int i = 0; i < PQntuples(res.get()); ++i) {
+        players.push_back(std::stoi(PQgetvalue(res.get(), i, 0)));
+    }
+    return players;
+}
+
+int GameRepository::getGamePlayerCount(int game_id) const {
+    if (!isConnected()) return 0;
+
+    std::ostringstream query;
+    query << "SELECT COUNT(*) FROM game_players WHERE game_id = " << game_id;
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_TUPLES_OK) return 0;
+
+    return std::stoi(PQgetvalue(res.get(), 0, 0));
+}
+
+bool GameRepository::setPlayerTribe(int game_id, int user_id, int tribe_id) {
+    if (!isConnected() || tribe_id <= 0) return false;
+
+    std::ostringstream query;
+    query << "UPDATE game_players SET tribe_id = " << tribe_id
+          << ", updated_at = CURRENT_TIMESTAMP "
+          << "WHERE game_id = " << game_id << " AND user_id = " << user_id;
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_COMMAND_OK) {
+        logError("setPlayerTribe", PQerrorMessage(conn_.get()));
+        return false;
+    }
+    return PQcmdTuples(res.get()) != nullptr && std::string(PQcmdTuples(res.get())) != "0";
+}
+
+int GameRepository::getPlayerTribe(int game_id, int user_id) const {
+    if (!isConnected()) return -1;
+
+    std::ostringstream query;
+    query << "SELECT tribe_id FROM game_players WHERE game_id = " << game_id
+          << " AND user_id = " << user_id << " LIMIT 1";
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_TUPLES_OK) return -1;
+    if (PQntuples(res.get()) == 0) return -1;
+
+    char* val = PQgetvalue(res.get(), 0, 0);
+    if (val == nullptr || PQgetisnull(res.get(), 0, 0)) return -1;
+
+    return std::stoi(val);
+}
+
+bool GameRepository::isPlayerTribeConfirmed(int game_id, int user_id) const {
+    return getPlayerTribe(game_id, user_id) > 0;
+}
+
+bool GameRepository::setPlayerReady(int game_id, int user_id, bool is_ready) {
+    if (!isConnected()) return false;
+
+    std::ostringstream query;
+    query << "UPDATE game_players SET is_ready = " << (is_ready ? "TRUE" : "FALSE")
+          << ", updated_at = CURRENT_TIMESTAMP "
+          << "WHERE game_id = " << game_id << " AND user_id = " << user_id;
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_COMMAND_OK) {
+        logError("setPlayerReady", PQerrorMessage(conn_.get()));
+        return false;
+    }
+    return true;
+}
+
+bool GameRepository::isPlayerReady(int game_id, int user_id) const {
+    if (!isConnected()) return false;
+
+    std::ostringstream query;
+    query << "SELECT is_ready FROM game_players WHERE game_id = " << game_id
+          << " AND user_id = " << user_id << " LIMIT 1";
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_TUPLES_OK) return false;
+    if (PQntuples(res.get()) == 0) return false;
+
+    char* val = PQgetvalue(res.get(), 0, 0);
+    return val != nullptr && std::string(val) == "t";
+}
+
+std::vector<int> GameRepository::getReadyPlayers(int game_id) const {
+    std::vector<int> ready;
+    if (!isConnected()) return ready;
+
+    std::ostringstream query;
+    query << "SELECT user_id FROM game_players WHERE game_id = " << game_id
+          << " AND is_ready = TRUE ORDER BY joined_at";
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_TUPLES_OK) return ready;
+
+    for (int i = 0; i < PQntuples(res.get()); ++i) {
+        ready.push_back(std::stoi(PQgetvalue(res.get(), i, 0)));
+    }
+    return ready;
+}
+
+std::optional<std::string> GameRepository::getPlayerJoinedAt(int game_id, int user_id) const {
+    if (!isConnected()) return std::nullopt;
+
+    std::ostringstream query;
+    query << "SELECT joined_at FROM game_players WHERE game_id = " << game_id
+          << " AND user_id = " << user_id << " LIMIT 1";
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_TUPLES_OK) return std::nullopt;
+    if (PQntuples(res.get()) == 0) return std::nullopt;
+
+    char* val = PQgetvalue(res.get(), 0, 0);
+    if (val == nullptr) return std::nullopt;
+
+    return std::string(val);
+}
+
+bool GameRepository::updatePlayerLastActivity(int game_id, int user_id) {
+    if (!isConnected()) return false;
+
+    std::ostringstream query;
+    query << "UPDATE game_players SET updated_at = CURRENT_TIMESTAMP "
+          << "WHERE game_id = " << game_id << " AND user_id = " << user_id;
+
+    auto res = fetchQuery(query.str());
+    if (!res || PQresultStatus(res.get()) != PGRES_COMMAND_OK) {
+        logError("updatePlayerLastActivity", PQerrorMessage(conn_.get()));
+        return false;
+    }
+    return true;
 }
